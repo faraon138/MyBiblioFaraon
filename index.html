@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Biblioteca de Faraon138</title>
     
-    <!-- Librerías CDN para Visor EPUB exclusivamente -->
+    <!-- Librerías CDN para Visor EPUB -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
 
@@ -31,7 +31,58 @@
             padding: 20px;
             scroll-behavior: smooth;
         }
-        .container { max-width: 1200px; margin: 0 auto; }
+        .container { max-width: 1200px; margin: 0 auto; display: none; }
+
+        /* PANTALLA DE BLOQUEO / LOGIN */
+        #login-overlay {
+            position: fixed;
+            inset: 0;
+            background: #090d16;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .login-card {
+            background: #0f172a;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 30px 25px;
+            max-width: 360px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+        .login-card h2 { margin: 0 0 8px 0; color: #ffffff; font-size: 20px; }
+        .login-card p { margin: 0 0 20px 0; color: var(--text-sub); font-size: 13px; }
+        .login-input {
+            width: 100%;
+            padding: 12px 15px;
+            margin-bottom: 12px;
+            border: 2px solid var(--border-color);
+            background: #1e293b;
+            color: white;
+            border-radius: 8px;
+            box-sizing: border-box;
+            outline: none;
+            font-size: 14px;
+        }
+        .login-input:focus { border-color: var(--accent-blue); }
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--accent-blue);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .login-btn:hover { background: var(--accent-hover); }
+        .login-error { color: #ef4444; font-size: 12px; margin-top: 10px; display: none; }
 
         /* HEADER */
         .header {
@@ -45,23 +96,10 @@
             border: 1px solid var(--border-color);
             position: relative;
         }
-        .header h1 {
-            margin: 0 0 4px 0;
-            font-size: 28px;
-            color: #ffffff;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-        }
+        .header h1 { margin: 0 0 4px 0; font-size: 28px; color: #ffffff; font-weight: 700; letter-spacing: 0.5px; }
         .header p { margin: 0; font-size: 13px; color: var(--text-sub); }
 
-        /* ACCIONES RÁPIDAS HEADER */
-        .header-actions {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 12px;
-            flex-wrap: wrap;
-        }
+        .header-actions { display: flex; justify-content: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
         .action-btn {
             background-color: #334155;
             color: #fff;
@@ -100,19 +138,8 @@
         .stats-card div { font-size: 14px; font-weight: bold; color: var(--text-main); }
 
         /* CONTROLES / BUSCADOR / FILTROS */
-        .controls-container {
-            margin-bottom: 25px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
-        }
-        .search-bar-wrap {
-            width: 100%;
-            max-width: 650px;
-            display: flex;
-            gap: 10px;
-        }
+        .controls-container { margin-bottom: 25px; display: flex; flex-direction: column; align-items: center; gap: 15px; }
+        .search-bar-wrap { width: 100%; max-width: 650px; display: flex; gap: 10px; }
         .search-bar {
             flex: 1;
             padding: 12px 20px;
@@ -139,12 +166,7 @@
             cursor: pointer;
         }
 
-        .filter-container {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
+        .filter-container { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
         .filter-btn {
             background-color: var(--card-bg);
             border: 1px solid var(--border-color);
@@ -160,19 +182,9 @@
         .filter-btn.active { background-color: var(--accent-blue); border-color: var(--accent-blue); color: #ffffff; }
         .filter-btn.active-status { background-color: var(--accent-gold); border-color: var(--accent-gold); color: #000; font-weight: bold; }
 
-        /* GRID DETALLE (2 COLUMNAS) */
-        .library-grid-detail {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
-        /* GRID MOSAICO (ESTANTERÍA DE PORTADAS) */
-        .library-grid-mosaic {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            gap: 15px;
-        }
+        /* GRIDS */
+        .library-grid-detail { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .library-grid-mosaic { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; }
 
         /* TARJETA DETALLE */
         .book-card {
@@ -204,7 +216,6 @@
         }
         .book-cover { width: 100%; height: 100%; object-fit: cover; }
 
-        /* PORTADA GENERADA PLACEHOLDER */
         .placeholder-cover {
             width: 100%;
             height: 100%;
@@ -238,7 +249,6 @@
 
         .book-review { margin: 0 0 12px 0; color: #334155; font-size: 13px; line-height: 1.45; text-align: justify; max-height: 80px; overflow-y: auto; }
 
-        /* CONTROLES INFERIORES TARJETA */
         .card-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
         .btn-group { display: flex; gap: 6px; }
 
@@ -414,7 +424,7 @@
             border: 1px solid var(--border-color);
             padding: 25px;
             border-radius: 12px;
-            max-width: 500px;
+            max-width: 450px;
             width: 100%;
             text-align: center;
             box-shadow: 0 10px 30px rgba(0,0,0,0.8);
@@ -438,9 +448,7 @@
             z-index: 10;
         }
 
-        @media (max-width: 900px) {
-            .library-grid-detail { grid-template-columns: 1fr; }
-        }
+        @media (max-width: 900px) { .library-grid-detail { grid-template-columns: 1fr; } }
         @media (max-width: 600px) {
             .book-card { flex-direction: column; align-items: center; text-align: center; }
             .book-title { padding-right: 0; }
@@ -450,8 +458,21 @@
 </head>
 <body>
 
-<div class="container">
-    <!-- HEADER -->
+<!-- PANTALLA DE ACCESO -->
+<div id="login-overlay">
+    <div class="login-card">
+        <h2>🔒 Acceso Restringido</h2>
+        <p>Biblioteca de Faraon138</p>
+        <form onsubmit="handleLogin(event)">
+            <input type="text" id="login-user" class="login-input" placeholder="Usuario" autocomplete="username" required>
+            <input type="password" id="login-pass" class="login-input" placeholder="Contraseña" autocomplete="current-password" required>
+            <button type="submit" class="login-btn">Entrar</button>
+            <div id="login-error" class="login-error">Credenciales incorrectas</div>
+        </form>
+    </div>
+</div>
+
+<div class="container" id="main-container">
     <div class="header">
         <h1>★ Biblioteca de Faraon138 ★</h1>
         <p id="catalog-status">Conectando con Google Drive...</p>
@@ -461,10 +482,10 @@
             <button class="action-btn" onclick="openRandomBook()">🎲 Sorpréndeme</button>
             <button class="action-btn" onclick="toggleStatsPanel()">📊 Estadísticas</button>
             <button class="action-btn" onclick="toggleViewMode()" id="view-mode-btn">🧩 Vista Mosaico</button>
+            <button class="action-btn" style="background:#b91c1c;" onclick="handleLogout()">🚪 Salir</button>
         </div>
     </div>
 
-    <!-- PANEL DE ESTADÍSTICAS -->
     <div id="statsPanel" class="stats-panel">
         <div class="stats-card">
             <h4>Total Catálogo</h4>
@@ -480,7 +501,6 @@
         </div>
     </div>
 
-    <!-- CONTROLES DE BÚSQUEDA Y FILTROS -->
     <div class="controls-container">
         <div class="search-bar-wrap">
             <input type="text" id="searchBar" class="search-bar" placeholder="Buscar por título, autor o género..." onkeyup="triggerSearch()">
@@ -508,14 +528,11 @@
         </div>
     </div>
 
-    <!-- CONTENEDOR DE LA LIBRERÍA -->
     <div id="library" class="library-grid-detail"></div>
-
-    <!-- PAGINACIÓN -->
     <div id="pagination" class="pagination-container"></div>
 </div>
 
-<!-- MODAL VISOR DE LIBROS (EPUB JS) -->
+<!-- MODAL VISOR EPUB -->
 <div id="readerModal" class="modal-overlay">
     <div class="reader-modal-content">
         <div class="reader-header">
@@ -537,7 +554,7 @@
 <!-- MODAL SORPRÉNDEME -->
 <div id="randomModal" class="modal-overlay">
     <div class="random-modal-content">
-        <h3 style="color:var(--accent-gold); margin-top:0;">🎲 ¡Tu lectura recomendada!</h3>
+        <h3 style="color:var(--accent-gold); margin-top:0;">🎲 ¡Lectura Recomendada!</h3>
         <div id="random-card-body"></div>
         <div style="margin-top: 20px; display:flex; gap:10px; justify-content:center;">
             <button class="action-btn" onclick="openRandomBook()">🎲 Probar con otro</button>
@@ -549,10 +566,58 @@
 <button id="backToTop" class="back-to-top" onclick="scrollToTop()">↑</button>
 
 <script>
+    // ==========================================
+    // CONFIGURACIÓN DE SEGURIDAD (MULTI-USUARIO)
+    // ==========================================
+    const USERS = {
+        'faraon138': '12345',      // Usuario Principal
+        'invitado': 'clave123',     // Usuario 2
+        'familiar': 'lectura2026'   // Usuario 3 (agrega más si deseas)
+    };
+
+    const AUTH_SESSION_KEY = 'faraon138_logged_in';
+    const AUTH_CURRENT_USER = 'faraon138_current_user';
+
+    function checkAuth() {
+        if (sessionStorage.getItem(AUTH_SESSION_KEY) === 'true') {
+            document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('main-container').style.display = 'block';
+            initLibrary();
+        } else {
+            document.getElementById('login-overlay').style.display = 'flex';
+            document.getElementById('main-container').style.display = 'none';
+        }
+    }
+
+    function handleLogin(e) {
+        e.preventDefault();
+        const user = document.getElementById('login-user').value.trim();
+        const pass = document.getElementById('login-pass').value.trim();
+        const errorEl = document.getElementById('login-error');
+
+        if (USERS[user] && USERS[user] === pass) {
+            sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
+            sessionStorage.setItem(AUTH_CURRENT_USER, user);
+            errorEl.style.display = 'none';
+            checkAuth();
+        } else {
+            errorEl.style.display = 'block';
+        }
+    }
+
+    function handleLogout() {
+        sessionStorage.removeItem(AUTH_SESSION_KEY);
+        sessionStorage.removeItem(AUTH_CURRENT_USER);
+        location.reload();
+    }
+
+    // ==========================================
+    // CONFIGURACIÓN GOOGLE DRIVE
+    // ==========================================
     const API_KEY = 'AIzaSyABYJpop2BBwvK0cPpdXv-Mge3Wc_SanwQ'; 
     const FOLDER_ID = '1DXoxedW-epDoOGaHFHyCEno2G7OdCGmh';
-    const CACHE_KEY = 'faraon138_library_cache_v6';
-    const USER_DATA_KEY = 'faraon138_user_preferences_v6';
+    const CACHE_KEY = 'faraon138_library_cache_v9';
+    const USER_DATA_KEY = 'faraon138_user_preferences_v9';
 
     let globalBooks = [];       
     let userData = { favorites: {}, status: {} }; 
@@ -875,7 +940,7 @@
                     else if (nameLower.includes('cover.')) coverId = file.id;
                     
                     if (nameLower.endsWith('.epub')) { detectedFormats.push('EPUB'); fileToReadId = file.id; bookLink = file.webViewLink; }
-                    else if (nameLower.endsWith('.pdf')) { detectedFormats.push('PDF'); bookLink = file.webViewLink; }
+                    else if (nameLower.endsWith('.pdf')) { detectedFormats.push('PDF'); fileToReadId = file.id; bookLink = file.webViewLink; }
                     else if (nameLower.endsWith('.mobi')) { detectedFormats.push('MOBI'); if(!fileToReadId) fileToReadId = file.id; bookLink = file.webViewLink; }
                     else if (nameLower.endsWith('.cbr') || nameLower.endsWith('.cbz')) { detectedFormats.push('CBR/CBZ'); bookLink = file.webViewLink; }
                 });
@@ -951,12 +1016,10 @@
         } catch (err) {}
     }
 
-    // MANEJO DEL LECTOR: DESCARGA DIRECTA DE LA API DE GOOGLE DRIVE SIN PROXIES QUE CORROMPAN EL BINARIO
     async function openReader(folderId) {
         const book = globalBooks.find(b => b.folderId === folderId);
         if (!book) return;
 
-        // SI ES PDF: ABRIR EN VISOR NATIVO DE GOOGLE DRIVE EN PESTAÑA NUEVA
         if (book.formats && book.formats.some(f => f.toUpperCase().includes('PDF'))) {
             window.open(book.bookLink || book.webViewLink, '_blank');
             return;
@@ -982,7 +1045,6 @@
         }
 
         try {
-            // DESCARGA DIRECTA BINARIA DESDE GOOGLE DRIVE
             const directUrl = `https://www.googleapis.com/drive/v3/files/${book.fileToReadId}?alt=media&key=${API_KEY}`;
             const response = await fetch(directUrl);
             
@@ -1027,19 +1089,40 @@
         }
     });
 
-    function openRandomBook() {
+    // MODAL "SORPRÉNDEME"
+    async function openRandomBook() {
         if (globalBooks.length === 0) return;
         const randomBook = globalBooks[Math.floor(Math.random() * globalBooks.length)];
         
         const modal = document.getElementById('randomModal');
         const body = document.getElementById('random-card-body');
 
-        body.innerHTML = `
-            <div style="font-size:18px; font-weight:bold; color:white; margin-bottom:6px;">${randomBook.title}</div>
-            <div style="color:var(--accent-gold); font-size:14px; margin-bottom:12px;">${randomBook.author}</div>
-            <button class="read-btn" style="margin: 0 auto;" onclick="closeRandomModal(); openReader('${randomBook.folderId}');">📖 Leer este libro ahora</button>
-        `;
         modal.classList.add('active');
+        body.innerHTML = `<div style="color:#94a3b8; padding: 20px; font-size:14px;">Preparando sugerencia...</div>`;
+
+        if (!randomBook.loadedDetails) {
+            await fetchBookDeepDetails(randomBook);
+        }
+
+        let coverHTML = randomBook.coverId 
+            ? `<img style="width:110px; height:160px; object-fit:cover; border-radius:6px; margin: 0 auto 12px; display:block; box-shadow:0 4px 10px rgba(0,0,0,0.5);" src="https://drive.google.com/thumbnail?id=${randomBook.coverId}&sz=w500" alt="Portada">`
+            : `<div style="width:110px; height:160px; margin:0 auto 12px; border-radius:6px; overflow:hidden; display:inline-block;">${createPlaceholderCoverHTML(randomBook.title, randomBook.author)}</div>`;
+
+        let badgesHtml = (randomBook.formats || ['EPUB']).map(fmt => {
+            let cls = fmt.toLowerCase().includes('pdf') ? 'badge-pdf' : fmt.toLowerCase().includes('mobi') ? 'badge-mobi' : fmt.toLowerCase().includes('cbr') ? 'badge-cbr' : 'badge-epub';
+            return `<span class="format-badge ${cls}">${fmt}</span>`;
+        }).join('');
+
+        body.innerHTML = `
+            ${coverHTML}
+            <div style="font-size:17px; font-weight:bold; color:white; margin-bottom:4px; line-height:1.3;">${randomBook.title}</div>
+            <div style="color:var(--accent-gold); font-size:14px; margin-bottom:8px;">${randomBook.author}</div>
+            <div style="margin-bottom:15px;">${badgesHtml}</div>
+            <div style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
+                <button class="read-btn" onclick="closeRandomModal(); openReader('${randomBook.folderId}');">📖 Leer libro</button>
+                <a href="${randomBook.bookLink || randomBook.webViewLink}" class="drive-icon-btn" target="_blank" style="padding:7px 14px; border-radius:6px;">📂 Abrir en Drive</a>
+            </div>
+        `;
     }
 
     function closeRandomModal() {
@@ -1123,7 +1206,8 @@
 
     function scrollToTop() { window.scrollTo({top: 0, behavior: 'smooth'}); }
 
-    initLibrary();
+    // INICIAR CON CONTROL DE ACCESO
+    checkAuth();
 </script>
 
 </body>
