@@ -67,7 +67,8 @@
             border-radius: 8px;
             box-sizing: border-box;
             outline: none;
-            font-size: 16px; /* Evita zoom automático en Safari iOS */
+            font-size: 16px; /* Evita zoom automático en Safari */
+            -webkit-appearance: none;
         }
         .login-input:focus { border-color: var(--accent-blue); }
         .login-btn {
@@ -144,7 +145,7 @@
         .search-bar {
             flex: 1;
             padding: 12px 20px;
-            font-size: 16px; /* Evita zoom automático en Safari */
+            font-size: 16px;
             border: 2px solid var(--border-color);
             background-color: var(--card-bg);
             color: #ffffff;
@@ -451,10 +452,10 @@
     <div class="login-card">
         <h2>🔒 Acceso Restringido</h2>
         <p>Biblioteca de Faraon138</p>
-        <form onsubmit="handleLogin(event)">
-            <input type="text" id="login-user" class="login-input" placeholder="Usuario" autocomplete="username" autocorrect="off" autocapitalize="none" required>
+        <form id="login-form" onsubmit="event.preventDefault(); processLogin(); return false;">
+            <input type="text" id="login-user" class="login-input" placeholder="Usuario" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" required>
             <input type="password" id="login-pass" class="login-input" placeholder="Contraseña" autocomplete="current-password" required>
-            <button type="submit" class="login-btn">Entrar</button>
+            <button type="button" class="login-btn" onclick="processLogin()">Entrar</button>
             <div id="login-error" class="login-error">Credenciales incorrectas</div>
         </form>
     </div>
@@ -532,9 +533,9 @@
             <div id="reader-loading" style="color:#0f172a; font-size:15px; font-weight:bold; text-align:center; padding:20px;">Cargando e-book digital...</div>
         </div>
         <div class="reader-footer">
-            <button class="action-btn" id="epub-prev" onclick="epubRendition?.prev()" style="display:none;">← Anterior</button>
+            <button class="action-btn" id="epub-prev" onclick="prevEpubPage()" style="display:none;">← Anterior</button>
             <span style="font-size:11px; color:#94a3b8;">Visor EPUB Integrado</span>
-            <button class="action-btn" id="epub-next" onclick="epubRendition?.next()" style="display:none;">Siguiente →</button>
+            <button class="action-btn" id="epub-next" onclick="nextEpubPage()" style="display:none;">Siguiente →</button>
         </div>
     </div>
 </div>
@@ -557,19 +558,19 @@
     // ==========================================
     // CAPA DE ALMACENAMIENTO SEGURO (SAFE STORAGE)
     // ==========================================
-    const memoryStore = {};
+    var memoryStore = {};
 
-    function safeGet(key, isSession = false) {
+    function safeGet(key, isSession) {
         try {
-            const storage = isSession ? window.sessionStorage : window.localStorage;
+            var storage = isSession ? window.sessionStorage : window.localStorage;
             if (storage) return storage.getItem(key);
         } catch (e) {}
         return memoryStore[key] || null;
     }
 
-    function safeSet(key, value, isSession = false) {
+    function safeSet(key, value, isSession) {
         try {
-            const storage = isSession ? window.sessionStorage : window.localStorage;
+            var storage = isSession ? window.sessionStorage : window.localStorage;
             if (storage) {
                 storage.setItem(key, value);
                 return;
@@ -578,9 +579,9 @@
         memoryStore[key] = value;
     }
 
-    function safeRemove(key, isSession = false) {
+    function safeRemove(key, isSession) {
         try {
-            const storage = isSession ? window.sessionStorage : window.localStorage;
+            var storage = isSession ? window.sessionStorage : window.localStorage;
             if (storage) storage.removeItem(key);
         } catch (e) {}
         delete memoryStore[key];
@@ -589,14 +590,14 @@
     // ==========================================
     // CONFIGURACIÓN DE SEGURIDAD (MULTI-USUARIO)
     // ==========================================
-    const USERS = {
+    var USERS = {
         'faraon138': '12345',      
         'invitado': 'clave123',     
         'familiar': 'lectura2026'   
     };
 
-    const AUTH_SESSION_KEY = 'faraon138_logged_in_v10';
-    const AUTH_CURRENT_USER = 'faraon138_current_user_v10';
+    var AUTH_SESSION_KEY = 'faraon138_logged_in_v11';
+    var AUTH_CURRENT_USER = 'faraon138_current_user_v11';
 
     function checkAuth() {
         if (safeGet(AUTH_SESSION_KEY, true) === 'true') {
@@ -609,19 +610,32 @@
         }
     }
 
-    function handleLogin(e) {
-        if (e && e.preventDefault) e.preventDefault();
-        const user = document.getElementById('login-user').value.trim();
-        const pass = document.getElementById('login-pass').value.trim();
-        const errorEl = document.getElementById('login-error');
+    function processLogin() {
+        var userEl = document.getElementById('login-user');
+        var passEl = document.getElementById('login-pass');
+        var errorEl = document.getElementById('login-error');
+
+        if (!userEl || !passEl) return;
+
+        var rawUser = userEl.value || '';
+        var rawPass = passEl.value || '';
+
+        var user = rawUser.trim().toLowerCase(); // Ignora mayúsculas en el usuario
+        var pass = rawPass.trim();
 
         if (USERS[user] && USERS[user] === pass) {
             safeSet(AUTH_SESSION_KEY, 'true', true);
             safeSet(AUTH_CURRENT_USER, user, true);
-            errorEl.style.display = 'none';
-            checkAuth();
+            if (errorEl) errorEl.style.display = 'none';
+            
+            document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('main-container').style.display = 'block';
+            initLibrary();
         } else {
-            errorEl.style.display = 'block';
+            if (errorEl) {
+                errorEl.innerText = "Usuario o contraseña incorrectos";
+                errorEl.style.display = 'block';
+            }
         }
     }
 
@@ -634,51 +648,49 @@
     // ==========================================
     // CONFIGURACIÓN GOOGLE DRIVE
     // ==========================================
-    const API_KEY = 'AIzaSyABYJpop2BBwvK0cPpdXv-Mge3Wc_SanwQ'; 
-    const FOLDER_ID = '1DXoxedW-epDoOGaHFHyCEno2G7OdCGmh';
-    const CACHE_KEY = 'faraon138_library_cache_v10';
-    const USER_DATA_KEY = 'faraon138_user_preferences_v10';
+    var API_KEY = 'AIzaSyABYJpop2BBwvK0cPpdXv-Mge3Wc_SanwQ'; 
+    var FOLDER_ID = '1DXoxedW-epDoOGaHFHyCEno2G7OdCGmh';
+    var CACHE_KEY = 'faraon138_library_cache_v11';
+    var USER_DATA_KEY = 'faraon138_user_preferences_v11';
 
-    let globalBooks = [];       
-    let userData = { favorites: {}, status: {} }; 
-    let currentPage = 1;
-    const itemsPerPage = 50;    
-    let currentFormatFilter = 'ALL';
-    let currentStatusFilter = 'ALL';
-    let currentSort = 'recent';
-    let currentViewMode = 'detail'; 
-    let searchQuery = '';
+    var globalBooks = [];       
+    var userData = { favorites: {}, status: {} }; 
+    var currentPage = 1;
+    var itemsPerPage = 50;    
+    var currentFormatFilter = 'ALL';
+    var currentStatusFilter = 'ALL';
+    var currentSort = 'recent';
+    var currentViewMode = 'detail'; 
+    var searchQuery = '';
 
-    let renderTimeout = null;
-    let firstRenderDone = false;
-    let epubRendition = null;
+    var renderTimeout = null;
+    var firstRenderDone = false;
+    var epubRendition = null;
 
     function normalizeText(text) {
         return (text || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     }
 
     function stringToColor(str) {
-        let hash = 0;
-        for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
-        const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
+        var hash = 0;
+        for (var i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+        var c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
         return "#" + "000000".substring(0, 6 - c.length) + c;
     }
 
     function createPlaceholderCoverHTML(title, author) {
-        const bg1 = stringToColor(author || "Anon");
-        const bg2 = "#0f172a";
-        const initials = title.split(' ').map(w => w[0]).join('').substring(0, 4).toUpperCase();
-        return `
-            <div class="placeholder-cover" style="background: linear-gradient(135deg, ${bg1}, ${bg2});">
-                <div class="placeholder-author">${author || 'Autor Desconocido'}</div>
-                <div class="placeholder-initials">${initials}</div>
-                <div class="placeholder-title">${title}</div>
-            </div>
-        `;
+        var bg1 = stringToColor(author || "Anon");
+        var bg2 = "#0f172a";
+        var initials = title.split(' ').map(function(w) { return w[0]; }).join('').substring(0, 4).toUpperCase();
+        return '<div class="placeholder-cover" style="background: linear-gradient(135deg, ' + bg1 + ', ' + bg2 + ');">' +
+               '<div class="placeholder-author">' + (author || 'Autor Desconocido') + '</div>' +
+               '<div class="placeholder-initials">' + initials + '</div>' +
+               '<div class="placeholder-title">' + title + '</div>' +
+               '</div>';
     }
 
     function loadUserData() {
-        const stored = safeGet(USER_DATA_KEY);
+        var stored = safeGet(USER_DATA_KEY);
         if (stored) {
             try { userData = JSON.parse(stored); } catch(e) {}
         }
@@ -690,12 +702,12 @@
 
     async function initLibrary() {
         loadUserData();
-        const cached = safeGet(CACHE_KEY);
+        var cached = safeGet(CACHE_KEY);
         
         if (cached) {
             try {
                 globalBooks = JSON.parse(cached);
-                document.getElementById('catalog-status').innerText = `Catálogo cargado desde memoria (${globalBooks.length} libros)`;
+                document.getElementById('catalog-status').innerText = 'Catálogo cargado desde memoria (' + globalBooks.length + ' libros)';
                 firstRenderDone = true;
                 updateStats();
                 filterAndRender(false);
@@ -714,32 +726,33 @@
     }
 
     async function fetchCalibreLibraryFromDrive() {
-        const statusPara = document.getElementById('catalog-status');
+        var statusPara = document.getElementById('catalog-status');
         
         try {
-            let allAuthors = [];
-            let authorsPageToken = '';
+            var allAuthors = [];
+            var authorsPageToken = '';
             
             do {
-                const authorsUrl = `https://www.googleapis.com/drive/v3/files?q='${FOLDER_ID}'+in+parents+and+mimeType='application/vnd.google-apps.folder'+and+explicitlyTrashed=false&key=${API_KEY}&fields=nextPageToken,files(id,name)&pageSize=1000${authorsPageToken ? `&pageToken=${authorsPageToken}` : ''}`;
-                const authorsResponse = await fetch(authorsUrl);
-                const authorsData = await authorsResponse.json();
+                var authorsUrl = 'https://www.googleapis.com/drive/v3/files?q=\'' + FOLDER_ID + '\'+in+parents+and+mimeType=\'application/vnd.google-apps.folder\'+and+explicitlyTrashed=false&key=' + API_KEY + '&fields=nextPageToken,files(id,name)&pageSize=1000' + (authorsPageToken ? '&pageToken=' + authorsPageToken : '');
+                var authorsResponse = await fetch(authorsUrl);
+                var authorsData = await authorsResponse.json();
                 
                 if (authorsData.files) allAuthors = allAuthors.concat(authorsData.files);
                 authorsPageToken = authorsData.nextPageToken;
             } while (authorsPageToken);
             
-            for (const authorFolder of allAuthors) {
-                let booksPageToken = '';
+            for (var i = 0; i < allAuthors.length; i++) {
+                var authorFolder = allAuthors[i];
+                var booksPageToken = '';
                 do {
-                    const booksUrl = `https://www.googleapis.com/drive/v3/files?q='${authorFolder.id}'+in+parents+and+mimeType='application/vnd.google-apps.folder'+and+explicitlyTrashed=false&key=${API_KEY}&fields=nextPageToken,files(id,name,createdTime)&pageSize=1000${booksPageToken ? `&pageToken=${booksPageToken}` : ''}`;
-                    const booksResponse = await fetch(booksUrl);
-                    const booksData = await booksResponse.json();
+                    var booksUrl = 'https://www.googleapis.com/drive/v3/files?q=\'' + authorFolder.id + '\'+in+parents+and+mimeType=\'application/vnd.google-apps.folder\'+and+explicitlyTrashed=false&key=' + API_KEY + '&fields=nextPageToken,files(id,name,createdTime)&pageSize=1000' + (booksPageToken ? '&pageToken=' + booksPageToken : '');
+                    var booksResponse = await fetch(booksUrl);
+                    var booksData = await booksResponse.json();
                     
                     if (booksData.files) {
-                        booksData.files.forEach(bookFolder => {
-                            let bookTitle = bookFolder.name.replace(/\s*\(\d+\)\s*$/, '').trim();
-                            let addedTime = bookFolder.createdTime ? new Date(bookFolder.createdTime).getTime() : 0;
+                        booksData.files.forEach(function(bookFolder) {
+                            var bookTitle = bookFolder.name.replace(/\s*\(\d+\)\s*$/, '').trim();
+                            var addedTime = bookFolder.createdTime ? new Date(bookFolder.createdTime).getTime() : 0;
 
                             globalBooks.push({
                                 folderId: bookFolder.id,
@@ -753,7 +766,7 @@
                             });
                         });
 
-                        statusPara.innerText = `Descubriendo libros... (${globalBooks.length} detectados)`;
+                        statusPara.innerText = 'Descubriendo libros... (' + globalBooks.length + ' detectados)';
 
                         if (!firstRenderDone && globalBooks.length > 0) {
                             firstRenderDone = true;
@@ -766,7 +779,7 @@
                 } while (booksPageToken);
             }
 
-            statusPara.innerText = `Catálogo completo sincronizado (${globalBooks.length} libros disponibles)`;
+            statusPara.innerText = 'Catálogo completo sincronizado (' + globalBooks.length + ' libros disponibles)';
             safeSet(CACHE_KEY, JSON.stringify(globalBooks));
             updateStats();
             filterAndRender(false);
@@ -779,48 +792,48 @@
 
     function requestThrottledRender() {
         if (renderTimeout) return;
-        renderTimeout = setTimeout(() => {
+        renderTimeout = setTimeout(function() {
             filterAndRender(true);
             renderTimeout = null;
         }, 1200);
     }
 
     function updateStats() {
-        document.getElementById('stat-total').innerText = `${globalBooks.length} volúmenes`;
+        document.getElementById('stat-total').innerText = globalBooks.length + ' volúmenes';
         
-        let counts = { EPUB: 0, PDF: 0, MOBI: 0, Otros: 0 };
-        let authorMap = {};
+        var counts = { EPUB: 0, PDF: 0, MOBI: 0, Otros: 0 };
+        var authorMap = {};
 
-        globalBooks.forEach(b => {
-            let fmt = (b.formats && b.formats[0]) ? b.formats[0].toUpperCase() : 'EPUB';
+        globalBooks.forEach(function(b) {
+            var fmt = (b.formats && b.formats[0]) ? b.formats[0].toUpperCase() : 'EPUB';
             if (counts[fmt] !== undefined) counts[fmt]++;
             else counts.Otros++;
             authorMap[b.author] = (authorMap[b.author] || 0) + 1;
         });
 
-        document.getElementById('stat-formats').innerText = `${counts.EPUB} EPUB · ${counts.PDF} PDF · ${counts.MOBI} MOBI`;
+        document.getElementById('stat-formats').innerText = counts.EPUB + ' EPUB · ' + counts.PDF + ' PDF · ' + counts.MOBI + ' MOBI';
 
-        let topAuthors = Object.entries(authorMap)
-            .sort((a,b) => b[1] - a[1])
+        var topAuthors = Object.entries(authorMap)
+            .sort(function(a,b) { return b[1] - a[1]; })
             .slice(0, 5)
-            .map(([name, count]) => `• ${name} (${count})`)
+            .map(function(item) { return '• ' + item[0] + ' (' + item[1] + ')'; })
             .join('<br>');
 
         document.getElementById('stat-authors').innerHTML = topAuthors || '-';
     }
 
     function toggleStatsPanel() {
-        const panel = document.getElementById('statsPanel');
+        var panel = document.getElementById('statsPanel');
         panel.style.display = panel.style.display === 'grid' ? 'none' : 'grid';
     }
 
-    function filterAndRender(isBackground = false) {
-        const libraryContainer = document.getElementById('library');
-        const cleanQuery = normalizeText(searchQuery).trim();
-        const keywords = cleanQuery ? cleanQuery.split(/\s+/).filter(k => k.length > 0) : [];
+    function filterAndRender(isBackground) {
+        var libraryContainer = document.getElementById('library');
+        var cleanQuery = normalizeText(searchQuery).trim();
+        var keywords = cleanQuery ? cleanQuery.split(/\s+/).filter(function(k) { return k.length > 0; }) : [];
 
-        let sorted = [...globalBooks];
-        sorted.sort((a, b) => {
+        var sorted = globalBooks.slice();
+        sorted.sort(function(a, b) {
             if (currentSort === 'recent') return b.createdTime - a.createdTime;
             if (currentSort === 'title_asc') return a.title.localeCompare(b.title);
             if (currentSort === 'title_desc') return b.title.localeCompare(a.title);
@@ -830,7 +843,7 @@
             return 0;
         });
 
-        let filtered = sorted.filter(book => {
+        var filtered = sorted.filter(function(book) {
             if (currentFormatFilter !== 'ALL' && book.loadedDetails) {
                 if (!book.formats.includes(currentFormatFilter)) return false;
             }
@@ -839,19 +852,19 @@
                 if (userData.status[book.folderId] !== currentStatusFilter) return false;
             }
             if (keywords.length > 0) {
-                const combinedText = normalizeText(`${book.title} ${book.author} ${book.folderName}`);
-                return keywords.every(keyword => combinedText.includes(keyword));
+                var combinedText = normalizeText(book.title + ' ' + book.author + ' ' + book.folderName);
+                return keywords.every(function(keyword) { return combinedText.includes(keyword); });
             }
             return true;
         });
 
-        const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage));
+        var totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage));
         if (currentPage > totalPages) currentPage = totalPages;
 
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        const pageItems = filtered.slice(startIndex, startIndex + itemsPerPage);
+        var startIndex = (currentPage - 1) * itemsPerPage;
+        var pageItems = filtered.slice(startIndex, startIndex + itemsPerPage);
 
-        const currentDisplayedCards = libraryContainer.querySelectorAll('.book-card, .mosaic-card').length;
+        var currentDisplayedCards = libraryContainer.querySelectorAll('.book-card, .mosaic-card').length;
         if (isBackground && currentDisplayedCards === pageItems.length) {
             renderPaginationControls(filtered.length);
             updateStats();
@@ -862,77 +875,75 @@
         libraryContainer.innerHTML = '';
 
         if (filtered.length === 0) {
-            libraryContainer.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:40px; color:#94a3b8;">No se encontraron libros.</div>`;
+            libraryContainer.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:#94a3b8;">No se encontraron libros.</div>';
             renderPaginationControls(0);
             return;
         }
 
-        pageItems.forEach((book, index) => {
-            const absoluteNumber = startIndex + index + 1;
-            const isFav = !!userData.favorites[book.folderId];
-            const currentStat = userData.status[book.folderId] || 'pendiente';
+        pageItems.forEach(function(book, index) {
+            var absoluteNumber = startIndex + index + 1;
+            var isFav = !!userData.favorites[book.folderId];
+            var currentStat = userData.status[book.folderId] || 'pendiente';
 
             if (currentViewMode === 'detail') {
-                const card = document.createElement('div');
+                var card = document.createElement('div');
                 card.className = 'book-card';
-                card.id = `card-${book.folderId}`;
+                card.id = 'card-' + book.folderId;
                 
-                let coverHTML = book.coverId 
-                    ? `<img class="book-cover" src="https://drive.google.com/thumbnail?id=${book.coverId}&sz=w500" alt="Portada" loading="lazy">`
+                var coverHTML = book.coverId 
+                    ? '<img class="book-cover" src="https://drive.google.com/thumbnail?id=' + book.coverId + '&sz=w500" alt="Portada" loading="lazy">'
                     : createPlaceholderCoverHTML(book.title, book.author);
 
-                let badgesHtml = (book.formats || ['EPUB']).map(fmt => {
-                    let cls = fmt.toLowerCase().includes('pdf') ? 'badge-pdf' : fmt.toLowerCase().includes('mobi') ? 'badge-mobi' : fmt.toLowerCase().includes('cbr') ? 'badge-cbr' : 'badge-epub';
-                    return `<span class="format-badge ${cls}">${fmt}</span>`;
+                var badgesHtml = (book.formats || ['EPUB']).map(function(fmt) {
+                    var cls = fmt.toLowerCase().includes('pdf') ? 'badge-pdf' : fmt.toLowerCase().includes('mobi') ? 'badge-mobi' : fmt.toLowerCase().includes('cbr') ? 'badge-cbr' : 'badge-epub';
+                    return '<span class="format-badge ' + cls + '">' + fmt + '</span>';
                 }).join('');
 
-                card.innerHTML = `
-                    <div class="cover-container" id="cover-zone-${book.folderId}">${coverHTML}</div>
-                    <div class="book-info">
-                        <div>
-                            <div class="title-header">
-                                <h2 class="book-title" id="title-${book.folderId}">${book.title}</h2>
-                                <div class="book-counter">#${absoluteNumber}</div>
-                            </div>
-                            <p class="book-author" id="author-${book.folderId}" onclick="filterByAuthor('${book.author.replace(/'/g, "\\'")}')">${book.author}</p>
-                            <div class="book-meta">
-                                <span id="formats-zone-${book.folderId}">${badgesHtml}</span>
-                            </div>
-                            <div class="book-review" id="review-${book.folderId}">${book.review || 'Buscando sinopsis en la nube...'}</div>
-                        </div>
-                        <div class="card-actions">
-                            <div class="btn-group">
-                                <button class="read-btn" onclick="openReader('${book.folderId}')">📖 Leer</button>
-                                <a href="${book.bookLink || book.webViewLink}" id="link-${book.folderId}" class="drive-icon-btn" target="_blank" title="Abrir en Google Drive">📂 Drive</a>
-                            </div>
-                            <div style="display:flex; align-items:center; gap:6px;">
-                                <select class="status-select" onchange="changeBookStatus('${book.folderId}', this.value)">
-                                    <option value="pendiente" ${currentStat==='pendiente'?'selected':''}>⏳ Pendiente</option>
-                                    <option value="leyendo" ${currentStat==='leyendo'?'selected':''}>📖 Leyendo</option>
-                                    <option value="leido" ${currentStat==='leido'?'selected':''}>✔ Leído</option>
-                                </select>
-                                <button class="fav-btn ${isFav?'is-fav':''}" onclick="toggleFavorite('${book.folderId}')">★</button>
-                            </div>
-                        </div>
-                    </div>
-                `;
+                card.innerHTML = 
+                    '<div class="cover-container" id="cover-zone-' + book.folderId + '">' + coverHTML + '</div>' +
+                    '<div class="book-info">' +
+                        '<div>' +
+                            '<div class="title-header">' +
+                                '<h2 class="book-title" id="title-' + book.folderId + '">' + book.title + '</h2>' +
+                                '<div class="book-counter">#' + absoluteNumber + '</div>' +
+                            '</div>' +
+                            '<p class="book-author" id="author-' + book.folderId + '" onclick="filterByAuthor(\'' + book.author.replace(/'/g, "\\'") + '\')">' + book.author + '</p>' +
+                            '<div class="book-meta">' +
+                                '<span id="formats-zone-' + book.folderId + '">' + badgesHtml + '</span>' +
+                            '</div>' +
+                            '<div class="book-review" id="review-' + book.folderId + '">' + (book.review || 'Buscando sinopsis en la nube...') + '</div>' +
+                        '</div>' +
+                        '<div class="card-actions">' +
+                            '<div class="btn-group">' +
+                                '<button class="read-btn" onclick="openReader(\'' + book.folderId + '\')">📖 Leer</button>' +
+                                '<a href="' + (book.bookLink || book.webViewLink) + '" id="link-' + book.folderId + '" class="drive-icon-btn" target="_blank" title="Abrir en Google Drive">📂 Drive</a>' +
+                            '</div>' +
+                            '<div style="display:flex; align-items:center; gap:6px;">' +
+                                '<select class="status-select" onchange="changeBookStatus(\'' + book.folderId + '\', this.value)">' +
+                                    '<option value="pendiente" ' + (currentStat==='pendiente'?'selected':'') + '>⏳ Pendiente</option>' +
+                                    '<option value="leyendo" ' + (currentStat==='leyendo'?'selected':'') + '>📖 Leyendo</option>' +
+                                    '<option value="leido" ' + (currentStat==='leido'?'selected':'') + '>✔ Leído</option>' +
+                                '</select>' +
+                                '<button class="fav-btn ' + (isFav?'is-fav':'') + '" onclick="toggleFavorite(\'' + book.folderId + '\')">★</button>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>';
                 libraryContainer.appendChild(card);
             } else {
-                const card = document.createElement('div');
+                var card = document.createElement('div');
                 card.className = 'mosaic-card';
-                card.onclick = () => openReader(book.folderId);
+                card.onclick = function() { openReader(book.folderId); };
 
-                let coverHTML = book.coverId 
-                    ? `<img class="book-cover" src="https://drive.google.com/thumbnail?id=${book.coverId}&sz=w500" alt="Portada" loading="lazy">`
+                var coverHTML = book.coverId 
+                    ? '<img class="book-cover" src="https://drive.google.com/thumbnail?id=' + book.coverId + '&sz=w500" alt="Portada" loading="lazy">'
                     : createPlaceholderCoverHTML(book.title, book.author);
 
-                card.innerHTML = `
-                    <div class="cover-container" id="cover-zone-${book.folderId}">${coverHTML}</div>
-                    <div class="mosaic-overlay">
-                        <div class="mosaic-title" id="title-${book.folderId}">${book.title}</div>
-                        <div class="mosaic-author" id="author-${book.folderId}">${book.author}</div>
-                    </div>
-                `;
+                card.innerHTML = 
+                    '<div class="cover-container" id="cover-zone-' + book.folderId + '">' + coverHTML + '</div>' +
+                    '<div class="mosaic-overlay">' +
+                        '<div class="mosaic-title" id="title-' + book.folderId + '">' + book.title + '</div>' +
+                        '<div class="mosaic-author" id="author-' + book.folderId + '">' + book.author + '</div>' +
+                    '</div>';
                 libraryContainer.appendChild(card);
             }
 
@@ -947,24 +958,24 @@
 
     async function fetchBookDeepDetails(book) {
         try {
-            const filesUrl = `https://www.googleapis.com/drive/v3/files?q='${book.folderId}'+in+parents+and+explicitlyTrashed=false&key=${API_KEY}&fields=files(id,name,webViewLink)&pageSize=100`;
-            const filesResponse = await fetch(filesUrl);
-            const filesData = await filesResponse.json();
+            var filesUrl = 'https://www.googleapis.com/drive/v3/files?q=\'' + book.folderId + '\'+in+parents+and+explicitlyTrashed=false&key=' + API_KEY + '&fields=files(id,name,webViewLink)&pageSize=100';
+            var filesResponse = await fetch(filesUrl);
+            var filesData = await filesResponse.json();
 
-            let metadataId = '';
-            let coverId = '';
-            let fileToReadId = '';
-            let bookLink = book.webViewLink; 
-            let detectedFormats = [];
+            var metadataId = '';
+            var coverId = '';
+            var fileToReadId = '';
+            var bookLink = book.webViewLink; 
+            var detectedFormats = [];
 
             if (filesData.files) {
-                filesData.files.forEach(file => {
-                    const nameLower = file.name.toLowerCase();
+                filesData.files.forEach(function(file) {
+                    var nameLower = file.name.toLowerCase();
                     if (nameLower === 'metadata.opf') metadataId = file.id;
                     else if (nameLower.includes('cover.')) coverId = file.id;
                     
                     if (nameLower.endsWith('.epub')) { detectedFormats.push('EPUB'); fileToReadId = file.id; bookLink = file.webViewLink; }
-                    else if (nameLower.endsWith('.pdf')) { detectedFormats.push('PDF'); fileToReadId = file.id; bookLink = file.webViewLink; }
+                    else if (nameLower.endsWith('.pdf')) { detectedFormats.push('PDF'); bookLink = file.webViewLink; }
                     else if (nameLower.endsWith('.mobi')) { detectedFormats.push('MOBI'); if(!fileToReadId) fileToReadId = file.id; bookLink = file.webViewLink; }
                     else if (nameLower.endsWith('.cbr') || nameLower.endsWith('.cbz')) { detectedFormats.push('CBR/CBZ'); bookLink = file.webViewLink; }
                 });
@@ -976,32 +987,32 @@
             if (detectedFormats.length > 0) book.formats = detectedFormats;
             book.loadedDetails = true;
 
-            const coverZone = document.getElementById(`cover-zone-${book.folderId}`);
+            var coverZone = document.getElementById('cover-zone-' + book.folderId);
             if (coverZone && coverId) {
-                coverZone.innerHTML = `<img class="book-cover" src="https://drive.google.com/thumbnail?id=${coverId}&sz=w500" alt="Portada" loading="lazy">`;
+                coverZone.innerHTML = '<img class="book-cover" src="https://drive.google.com/thumbnail?id=' + coverId + '&sz=w500" alt="Portada" loading="lazy">';
             }
-            const formatsZone = document.getElementById(`formats-zone-${book.folderId}`);
+            var formatsZone = document.getElementById('formats-zone-' + book.folderId);
             if (formatsZone) {
-                let badgesHtml = book.formats.map(fmt => {
-                    let cls = fmt.toLowerCase().includes('pdf') ? 'badge-pdf' : fmt.toLowerCase().includes('mobi') ? 'badge-mobi' : fmt.toLowerCase().includes('cbr') ? 'badge-cbr' : 'badge-epub';
-                    return `<span class="format-badge ${cls}">${fmt}</span>`;
+                var badgesHtml = book.formats.map(function(fmt) {
+                    var cls = fmt.toLowerCase().includes('pdf') ? 'badge-pdf' : fmt.toLowerCase().includes('mobi') ? 'badge-mobi' : fmt.toLowerCase().includes('cbr') ? 'badge-cbr' : 'badge-epub';
+                    return '<span class="format-badge ' + cls + '">' + fmt + '</span>';
                 }).join('');
                 formatsZone.innerHTML = badgesHtml;
             }
-            const linkEl = document.getElementById(`link-${book.folderId}`);
+            var linkEl = document.getElementById('link-' + book.folderId);
             if (linkEl) linkEl.setAttribute('href', bookLink);
 
             if (metadataId) {
-                const googleUrl = `https://www.googleapis.com/drive/v3/files/${metadataId}?alt=media&key=${API_KEY}`;
-                let xmlText = null;
-                const proxies = [
-                    `https://api.allorigins.win/raw?url=${encodeURIComponent(googleUrl)}`,
-                    `https://corsproxy.io/?${encodeURIComponent(googleUrl)}`
+                var googleUrl = 'https://www.googleapis.com/drive/v3/files/' + metadataId + '?alt=media&key=' + API_KEY;
+                var xmlText = null;
+                var proxies = [
+                    'https://api.allorigins.win/raw?url=' + encodeURIComponent(googleUrl),
+                    'https://corsproxy.io/?' + encodeURIComponent(googleUrl)
                 ];
 
-                for (let proxy of proxies) {
+                for (var p = 0; p < proxies.length; p++) {
                     try {
-                        let res = await fetch(proxy);
+                        var res = await fetch(proxies[p]);
                         if (res.ok) {
                             xmlText = await res.text();
                             if (xmlText && xmlText.includes('<')) break;
@@ -1010,26 +1021,26 @@
                 }
 
                 if (xmlText) {
-                    const parser = new DOMParser();
-                    const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+                    var parser = new DOMParser();
+                    var xmlDoc = parser.parseFromString(xmlText, "text/xml");
                     
-                    const titleNode = xmlDoc.getElementsByTagName("dc:title")[0] || xmlDoc.getElementsByTagName("title")[0];
-                    const creatorNode = xmlDoc.getElementsByTagName("dc:creator")[0] || xmlDoc.getElementsByTagName("creator")[0];
-                    const descNode = xmlDoc.getElementsByTagName("dc:description")[0] || xmlDoc.getElementsByTagName("description")[0];
+                    var titleNode = xmlDoc.getElementsByTagName("dc:title")[0] || xmlDoc.getElementsByTagName("title")[0];
+                    var creatorNode = xmlDoc.getElementsByTagName("dc:creator")[0] || xmlDoc.getElementsByTagName("creator")[0];
+                    var descNode = xmlDoc.getElementsByTagName("dc:description")[0] || xmlDoc.getElementsByTagName("description")[0];
 
-                    if (titleNode?.textContent) {
+                    if (titleNode && titleNode.textContent) {
                         book.title = titleNode.textContent.trim();
-                        const tEl = document.getElementById(`title-${book.folderId}`);
+                        var tEl = document.getElementById('title-' + book.folderId);
                         if (tEl) tEl.innerText = book.title;
                     }
-                    if (creatorNode?.textContent) {
+                    if (creatorNode && creatorNode.textContent) {
                         book.author = creatorNode.textContent.trim();
-                        const aEl = document.getElementById(`author-${book.folderId}`);
+                        var aEl = document.getElementById('author-' + book.folderId);
                         if (aEl) aEl.innerText = book.author;
                     }
-                    if (descNode?.textContent) {
+                    if (descNode && descNode.textContent) {
                         book.review = descNode.textContent.trim();
-                        const rEl = document.getElementById(`review-${book.folderId}`);
+                        var rEl = document.getElementById('review-' + book.folderId);
                         if (rEl) rEl.innerHTML = book.review;
                     }
                 }
@@ -1041,20 +1052,20 @@
     }
 
     async function openReader(folderId) {
-        const book = globalBooks.find(b => b.folderId === folderId);
+        var book = globalBooks.find(function(b) { return b.folderId === folderId; });
         if (!book) return;
 
-        if (book.formats && book.formats.some(f => f.toUpperCase().includes('PDF'))) {
+        if (book.formats && book.formats.some(function(f) { return f.toUpperCase().includes('PDF'); })) {
             window.open(book.bookLink || book.webViewLink, '_blank');
             return;
         }
 
-        const modal = document.getElementById('readerModal');
-        const titleEl = document.getElementById('reader-book-title');
-        const loadingEl = document.getElementById('reader-loading');
-        const epubViewer = document.getElementById('epub-viewer');
+        var modal = document.getElementById('readerModal');
+        var titleEl = document.getElementById('reader-book-title');
+        var loadingEl = document.getElementById('reader-loading');
+        var epubViewer = document.getElementById('epub-viewer');
 
-        titleEl.innerText = `Leyendo: ${book.title}`;
+        titleEl.innerText = 'Leyendo: ' + book.title;
         modal.classList.add('active');
         loadingEl.style.display = 'block';
         loadingEl.innerHTML = "Descargando e-book y preparando visor...";
@@ -1064,17 +1075,17 @@
         document.getElementById('epub-next').style.display = 'none';
 
         if (!book.fileToReadId) {
-            loadingEl.innerHTML = `No se detectó un archivo legible directo.<br><br><a href="${book.bookLink || book.webViewLink}" target="_blank" class="read-btn">📂 Abrir en Google Drive</a>`;
+            loadingEl.innerHTML = 'No se detectó un archivo legible directo.<br><br><a href="' + (book.bookLink || book.webViewLink) + '" target="_blank" class="read-btn">📂 Abrir en Google Drive</a>';
             return;
         }
 
         try {
-            const directUrl = `https://www.googleapis.com/drive/v3/files/${book.fileToReadId}?alt=media&key=${API_KEY}`;
-            const response = await fetch(directUrl);
+            var directUrl = 'https://www.googleapis.com/drive/v3/files/' + book.fileToReadId + '?alt=media&key=' + API_KEY;
+            var response = await fetch(directUrl);
             
             if (!response.ok) throw new Error("Error en la respuesta de Drive API");
             
-            const arrayBuffer = await response.arrayBuffer();
+            var arrayBuffer = await response.arrayBuffer();
 
             loadingEl.style.display = 'none';
             epubViewer.style.display = 'block';
@@ -1086,14 +1097,26 @@
             }
             epubViewer.innerHTML = '';
 
-            const ePubBook = ePub(arrayBuffer);
+            var ePubBook = ePub(arrayBuffer);
             epubRendition = ePubBook.renderTo("epub-viewer", { width: "100%", height: "100%" });
             await epubRendition.display();
 
         } catch (e) {
             console.error("Error abriendo EPUB:", e);
             loadingEl.style.display = 'block';
-            loadingEl.innerHTML = `No se pudo desplegar el visor interno de este e-book.<br><br><a href="${book.bookLink || book.webViewLink}" target="_blank" class="read-btn" style="text-decoration:none;">📂 Abrir directamente en Google Drive</a>`;
+            loadingEl.innerHTML = 'No se pudo desplegar el visor interno de este e-book.<br><br><a href="' + (book.bookLink || book.webViewLink) + '" target="_blank" class="read-btn" style="text-decoration:none;">📂 Abrir directamente en Google Drive</a>';
+        }
+    }
+
+    function prevEpubPage() {
+        if (epubRendition && typeof epubRendition.prev === 'function') {
+            epubRendition.prev();
+        }
+    }
+
+    function nextEpubPage() {
+        if (epubRendition && typeof epubRendition.next === 'function') {
+            epubRendition.next();
         }
     }
 
@@ -1105,47 +1128,46 @@
     }
 
     document.addEventListener('keydown', function(e) {
-        const modal = document.getElementById('readerModal');
+        var modal = document.getElementById('readerModal');
         if (modal.classList.contains('active') && epubRendition) {
-            if (e.key === 'ArrowRight') epubRendition.next();
-            if (e.key === 'ArrowLeft') epubRendition.prev();
+            if (e.key === 'ArrowRight') nextEpubPage();
+            if (e.key === 'ArrowLeft') prevEpubPage();
             if (e.key === 'Escape') closeReader();
         }
     });
 
     async function openRandomBook() {
         if (globalBooks.length === 0) return;
-        const randomBook = globalBooks[Math.floor(Math.random() * globalBooks.length)];
+        var randomBook = globalBooks[Math.floor(Math.random() * globalBooks.length)];
         
-        const modal = document.getElementById('randomModal');
-        const body = document.getElementById('random-card-body');
+        var modal = document.getElementById('randomModal');
+        var body = document.getElementById('random-card-body');
 
         modal.classList.add('active');
-        body.innerHTML = `<div style="color:#94a3b8; padding: 20px; font-size:14px;">Preparando sugerencia...</div>`;
+        body.innerHTML = '<div style="color:#94a3b8; padding: 20px; font-size:14px;">Preparando sugerencia...</div>';
 
         if (!randomBook.loadedDetails) {
             await fetchBookDeepDetails(randomBook);
         }
 
-        let coverHTML = randomBook.coverId 
-            ? `<img style="width:110px; height:160px; object-fit:cover; border-radius:6px; margin: 0 auto 12px; display:block; box-shadow:0 4px 10px rgba(0,0,0,0.5);" src="https://drive.google.com/thumbnail?id=${randomBook.coverId}&sz=w500" alt="Portada" loading="lazy">`
-            : `<div style="width:110px; height:160px; margin:0 auto 12px; border-radius:6px; overflow:hidden; display:inline-block;">${createPlaceholderCoverHTML(randomBook.title, randomBook.author)}</div>`;
+        var coverHTML = randomBook.coverId 
+            ? '<img style="width:110px; height:160px; object-fit:cover; border-radius:6px; margin: 0 auto 12px; display:block; box-shadow:0 4px 10px rgba(0,0,0,0.5);" src="https://drive.google.com/thumbnail?id=' + randomBook.coverId + '&sz=w500" alt="Portada" loading="lazy">'
+            : '<div style="width:110px; height:160px; margin:0 auto 12px; border-radius:6px; overflow:hidden; display:inline-block;">' + createPlaceholderCoverHTML(randomBook.title, randomBook.author) + '</div>';
 
-        let badgesHtml = (randomBook.formats || ['EPUB']).map(fmt => {
-            let cls = fmt.toLowerCase().includes('pdf') ? 'badge-pdf' : fmt.toLowerCase().includes('mobi') ? 'badge-mobi' : fmt.toLowerCase().includes('cbr') ? 'badge-cbr' : 'badge-epub';
-            return `<span class="format-badge ${cls}">${fmt}</span>`;
+        var badgesHtml = (randomBook.formats || ['EPUB']).map(function(fmt) {
+            var cls = fmt.toLowerCase().includes('pdf') ? 'badge-pdf' : fmt.toLowerCase().includes('mobi') ? 'badge-mobi' : fmt.toLowerCase().includes('cbr') ? 'badge-cbr' : 'badge-epub';
+            return '<span class="format-badge ' + cls + '">' + fmt + '</span>';
         }).join('');
 
-        body.innerHTML = `
-            ${coverHTML}
-            <div style="font-size:17px; font-weight:bold; color:white; margin-bottom:4px; line-height:1.3;">${randomBook.title}</div>
-            <div style="color:var(--accent-gold); font-size:14px; margin-bottom:8px;">${randomBook.author}</div>
-            <div style="margin-bottom:15px;">${badgesHtml}</div>
-            <div style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
-                <button class="read-btn" onclick="closeRandomModal(); openReader('${randomBook.folderId}');">📖 Leer libro</button>
-                <a href="${randomBook.bookLink || randomBook.webViewLink}" class="drive-icon-btn" target="_blank" style="padding:7px 14px; border-radius:6px;">📂 Abrir en Drive</a>
-            </div>
-        `;
+        body.innerHTML = 
+            coverHTML +
+            '<div style="font-size:17px; font-weight:bold; color:white; margin-bottom:4px; line-height:1.3;">' + randomBook.title + '</div>' +
+            '<div style="color:var(--accent-gold); font-size:14px; margin-bottom:8px;">' + randomBook.author + '</div>' +
+            '<div style="margin-bottom:15px;">' + badgesHtml + '</div>' +
+            '<div style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">' +
+                '<button class="read-btn" onclick="closeRandomModal(); openReader(\'' + randomBook.folderId + '\');">📖 Leer libro</button>' +
+                '<a href="' + (randomBook.bookLink || randomBook.webViewLink) + '" class="drive-icon-btn" target="_blank" style="padding:7px 14px; border-radius:6px;">📂 Abrir en Drive</a>' +
+            '</div>';
     }
 
     function closeRandomModal() {
@@ -1172,19 +1194,19 @@
 
     function setFormatFilter(fmt) {
         currentFormatFilter = fmt;
-        const fmtMap = {
+        var fmtMap = {
             'ALL': 'btn-fmt-all',
             'EPUB': 'btn-fmt-epub',
             'PDF': 'btn-fmt-pdf',
             'MOBI': 'btn-fmt-mobi',
             'CBR/CBZ': 'btn-fmt-cbr'
         };
-        ['btn-fmt-all', 'btn-fmt-epub', 'btn-fmt-pdf', 'btn-fmt-mobi', 'btn-fmt-cbr'].forEach(id => {
-            const el = document.getElementById(id);
+        ['btn-fmt-all', 'btn-fmt-epub', 'btn-fmt-pdf', 'btn-fmt-mobi', 'btn-fmt-cbr'].forEach(function(id) {
+            var el = document.getElementById(id);
             if (el) el.classList.remove('active');
         });
         if (fmtMap[fmt]) {
-            const activeEl = document.getElementById(fmtMap[fmt]);
+            var activeEl = document.getElementById(fmtMap[fmt]);
             if (activeEl) activeEl.classList.add('active');
         }
         currentPage = 1;
@@ -1193,18 +1215,18 @@
 
     function setStatusFilter(status) {
         currentStatusFilter = currentStatusFilter === status ? 'ALL' : status;
-        const statusMap = {
+        var statusMap = {
             'FAV': 'filter-favs',
             'leyendo': 'filter-reading',
             'leido': 'filter-read',
             'pendiente': 'filter-pending'
         };
-        Object.values(statusMap).forEach(id => {
-            const el = document.getElementById(id);
+        Object.values(statusMap).forEach(function(id) {
+            var el = document.getElementById(id);
             if (el) el.classList.remove('active-status');
         });
         if (currentStatusFilter !== 'ALL' && statusMap[currentStatusFilter]) {
-            const activeEl = document.getElementById(statusMap[currentStatusFilter]);
+            var activeEl = document.getElementById(statusMap[currentStatusFilter]);
             if (activeEl) activeEl.classList.add('active-status');
         }
         currentPage = 1;
@@ -1229,16 +1251,15 @@
     }
 
     function renderPaginationControls(totalItems) {
-        const pagContainer = document.getElementById('pagination');
-        const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
+        var pagContainer = document.getElementById('pagination');
+        var totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
         
         if (totalPages <= 1) { pagContainer.innerHTML = ''; return; }
 
-        pagContainer.innerHTML = `
-            <button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="changePage(-1)">← Anteriores 50</button>
-            <span class="page-info">Página ${currentPage} de ${totalPages}</span>
-            <button class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="changePage(1)">Siguientes 50 →</button>
-        `;
+        pagContainer.innerHTML = 
+            '<button class="page-btn" ' + (currentPage === 1 ? 'disabled' : '') + ' onclick="changePage(-1)">← Anteriores 50</button>' +
+            '<span class="page-info">Página ' + currentPage + ' de ' + totalPages + '</span>' +
+            '<button class="page-btn" ' + (currentPage === totalPages ? 'disabled' : '') + ' onclick="changePage(1)">Siguientes 50 →</button>';
     }
 
     function changePage(dir) {
@@ -1248,8 +1269,12 @@
     }
 
     window.onscroll = function() {
-        const btn = document.getElementById("backToTop");
-        btn.style.display = (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) ? "block" : "none";
+        var btn = document.getElementById("backToTop");
+        if (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) {
+            btn.style.display = "block";
+        } else {
+            btn.style.display = "none";
+        }
     };
 
     function scrollToTop() { window.scrollTo({top: 0, behavior: 'smooth'}); }
