@@ -67,7 +67,7 @@
             border-radius: 8px;
             box-sizing: border-box;
             outline: none;
-            font-size: 16px; /* Evita zoom automático en Safari */
+            font-size: 16px;
             -webkit-appearance: none;
         }
         .login-input:focus { border-color: var(--accent-blue); }
@@ -140,10 +140,11 @@
         .stats-card h4 { margin: 0 0 5px 0; font-size: 12px; color: var(--text-sub); text-transform: uppercase; }
         .stats-card div { font-size: 14px; font-weight: bold; color: var(--text-main); }
 
-        .controls-container { margin-bottom: 25px; display: flex; flex-direction: column; align-items: center; gap: 15px; }
-        .search-bar-wrap { width: 100%; max-width: 650px; display: flex; gap: 10px; }
+        .controls-container { margin-bottom: 25px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+        .search-bar-wrap { width: 100%; max-width: 750px; display: flex; gap: 10px; flex-wrap: wrap; }
         .search-bar {
             flex: 1;
+            min-width: 250px;
             padding: 12px 20px;
             font-size: 16px;
             border: 2px solid var(--border-color);
@@ -157,8 +158,8 @@
         }
         .search-bar:focus { border-color: var(--accent-blue); }
 
-        .sort-select {
-            padding: 0 15px;
+        .sort-select, .filter-select {
+            padding: 10px 16px;
             border: 2px solid var(--border-color);
             background-color: var(--card-bg);
             color: #ffffff;
@@ -169,8 +170,9 @@
             cursor: pointer;
             -webkit-appearance: none;
         }
+        .filter-select:focus, .sort-select:focus { border-color: var(--accent-blue); }
 
-        .filter-container { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; align-items: center; }
+        .filter-container { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; align-items: center; max-width: 1000px; }
         .filter-btn {
             background-color: var(--card-bg);
             border: 1px solid var(--border-color);
@@ -238,7 +240,7 @@
         .book-title { margin: 0; color: #0f172a; font-size: 17px; font-weight: bold; line-height: 1.3; overflow-wrap: break-word; flex: 1; }
         .book-counter { font-size: 11px; color: #64748b; font-weight: 700; background: #f1f5f9; padding: 3px 8px; border-radius: 10px; white-space: nowrap; }
 
-        .book-author { margin: 0 0 6px 0; color: #d97706; font-size: 14px; font-weight: 600; cursor: pointer; display: inline-block; }
+        .book-author { margin: 0 0 4px 0; color: #d97706; font-size: 14px; font-weight: 600; cursor: pointer; display: inline-block; }
         .book-author:hover { text-decoration: underline; }
 
         .book-meta { margin: 0 0 8px 0; font-size: 12px; color: #64748b; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
@@ -247,6 +249,34 @@
         .badge-pdf { background-color: #dc2626; }
         .badge-mobi { background-color: #0284c7; }
         .badge-cbr { background-color: #9333ea; }
+
+        /* INSIGNIAS DE SERIES Y ETIQUETAS */
+        .series-badge {
+            background-color: #0284c7;
+            color: #ffffff;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+        }
+        .series-badge:hover { background-color: #0369a1; }
+
+        .tag-badge {
+            background-color: #f1f5f9;
+            color: #475569;
+            border: 1px solid #cbd5e1;
+            padding: 2px 7px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-block;
+        }
+        .tag-badge:hover { background-color: #e2e8f0; color: #0f172a; }
 
         .book-review { margin: 0 0 12px 0; color: #334155; font-size: 13px; line-height: 1.45; text-align: justify; max-height: 80px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 
@@ -492,7 +522,7 @@
 
     <div class="controls-container">
         <div class="search-bar-wrap">
-            <input type="text" id="searchBar" class="search-bar" placeholder="Buscar por título, autor o género..." onkeyup="triggerSearch()">
+            <input type="text" id="searchBar" class="search-bar" placeholder="Buscar por título, autor, serie o etiqueta..." onkeyup="triggerSearch()">
             <select id="sortSelect" class="sort-select" onchange="triggerSort()">
                 <option value="recent">Más recientes primero</option>
                 <option value="title_asc">Título (A-Z)</option>
@@ -500,6 +530,16 @@
                 <option value="author_asc">Autor (A-Z)</option>
                 <option value="author_desc">Autor (Z-A)</option>
                 <option value="format">Por Formato</option>
+            </select>
+            
+            <!-- SELECTOR DE SERIES -->
+            <select id="seriesSelect" class="filter-select" onchange="setSeriesFilter(this.value)">
+                <option value="ALL">📚 Todas las Series</option>
+            </select>
+
+            <!-- SELECTOR DE ETIQUETAS/GÉNEROS -->
+            <select id="tagSelect" class="filter-select" onchange="setTagFilter(this.value)">
+                <option value="ALL">🏷️ Todas las Etiquetas</option>
             </select>
         </div>
         
@@ -596,8 +636,8 @@
         'familiar': 'lectura2026'   
     };
 
-    var AUTH_SESSION_KEY = 'faraon138_logged_in_v11';
-    var AUTH_CURRENT_USER = 'faraon138_current_user_v11';
+    var AUTH_SESSION_KEY = 'faraon138_logged_in_v12';
+    var AUTH_CURRENT_USER = 'faraon138_current_user_v12';
 
     function checkAuth() {
         if (safeGet(AUTH_SESSION_KEY, true) === 'true') {
@@ -620,7 +660,7 @@
         var rawUser = userEl.value || '';
         var rawPass = passEl.value || '';
 
-        var user = rawUser.trim().toLowerCase(); // Ignora mayúsculas en el usuario
+        var user = rawUser.trim().toLowerCase();
         var pass = rawPass.trim();
 
         if (USERS[user] && USERS[user] === pass) {
@@ -650,8 +690,8 @@
     // ==========================================
     var API_KEY = 'AIzaSyABYJpop2BBwvK0cPpdXv-Mge3Wc_SanwQ'; 
     var FOLDER_ID = '1DXoxedW-epDoOGaHFHyCEno2G7OdCGmh';
-    var CACHE_KEY = 'faraon138_library_cache_v11';
-    var USER_DATA_KEY = 'faraon138_user_preferences_v11';
+    var CACHE_KEY = 'faraon138_library_cache_v12';
+    var USER_DATA_KEY = 'faraon138_user_preferences_v12';
 
     var globalBooks = [];       
     var userData = { favorites: {}, status: {} }; 
@@ -659,6 +699,8 @@
     var itemsPerPage = 50;    
     var currentFormatFilter = 'ALL';
     var currentStatusFilter = 'ALL';
+    var currentSeriesFilter = 'ALL';
+    var currentTagFilter = 'ALL';
     var currentSort = 'recent';
     var currentViewMode = 'detail'; 
     var searchQuery = '';
@@ -700,6 +742,45 @@
         safeSet(USER_DATA_KEY, JSON.stringify(userData));
     }
 
+    // POBLAR SELECTORES DINÁMICOS DE SERIES Y ETIQUETAS
+    function populateDynamicFilters() {
+        var seriesMap = {};
+        var tagMap = {};
+
+        globalBooks.forEach(function(b) {
+            if (b.series && b.series.trim()) {
+                seriesMap[b.series.trim()] = true;
+            }
+            if (b.tags && Array.isArray(b.tags)) {
+                b.tags.forEach(function(t) {
+                    if (t && t.trim()) tagMap[t.trim()] = true;
+                });
+            }
+        });
+
+        var sortedSeries = Object.keys(seriesMap).sort(function(a,b){ return a.localeCompare(b); });
+        var sortedTags = Object.keys(tagMap).sort(function(a,b){ return a.localeCompare(b); });
+
+        var seriesSelect = document.getElementById('seriesSelect');
+        var tagSelect = document.getElementById('tagSelect');
+
+        if (seriesSelect) {
+            var seriesHtml = '<option value="ALL">📚 Todas las Series (' + sortedSeries.length + ')</option>';
+            sortedSeries.forEach(function(s) {
+                seriesHtml += '<option value="' + s.replace(/"/g, '&quot;') + '" ' + (currentSeriesFilter === s ? 'selected' : '') + '>' + s + '</option>';
+            });
+            seriesSelect.innerHTML = seriesHtml;
+        }
+
+        if (tagSelect) {
+            var tagHtml = '<option value="ALL">🏷️ Todas las Etiquetas (' + sortedTags.length + ')</option>';
+            sortedTags.forEach(function(t) {
+                tagHtml += '<option value="' + t.replace(/"/g, '&quot;') + '" ' + (currentTagFilter === t ? 'selected' : '') + '>' + t + '</option>';
+            });
+            tagSelect.innerHTML = tagHtml;
+        }
+    }
+
     async function initLibrary() {
         loadUserData();
         var cached = safeGet(CACHE_KEY);
@@ -709,6 +790,7 @@
                 globalBooks = JSON.parse(cached);
                 document.getElementById('catalog-status').innerText = 'Catálogo cargado desde memoria (' + globalBooks.length + ' libros)';
                 firstRenderDone = true;
+                populateDynamicFilters();
                 updateStats();
                 filterAndRender(false);
                 return;
@@ -762,6 +844,8 @@
                                 createdTime: addedTime,
                                 webViewLink: bookFolder.webViewLink,
                                 loadedDetails: false,
+                                series: '',
+                                tags: [],
                                 formats: ['EPUB'] 
                             });
                         });
@@ -770,6 +854,7 @@
 
                         if (!firstRenderDone && globalBooks.length > 0) {
                             firstRenderDone = true;
+                            populateDynamicFilters();
                             filterAndRender(false);
                         } else {
                             requestThrottledRender();
@@ -781,6 +866,7 @@
 
             statusPara.innerText = 'Catálogo completo sincronizado (' + globalBooks.length + ' libros disponibles)';
             safeSet(CACHE_KEY, JSON.stringify(globalBooks));
+            populateDynamicFilters();
             updateStats();
             filterAndRender(false);
 
@@ -793,6 +879,7 @@
     function requestThrottledRender() {
         if (renderTimeout) return;
         renderTimeout = setTimeout(function() {
+            populateDynamicFilters();
             filterAndRender(true);
             renderTimeout = null;
         }, 1200);
@@ -851,8 +938,17 @@
             if (['leyendo', 'leido', 'pendiente'].includes(currentStatusFilter)) {
                 if (userData.status[book.folderId] !== currentStatusFilter) return false;
             }
+            // FILTRO DE SERIE
+            if (currentSeriesFilter !== 'ALL') {
+                if (!book.series || book.series !== currentSeriesFilter) return false;
+            }
+            // FILTRO DE ETIQUETA
+            if (currentTagFilter !== 'ALL') {
+                if (!book.tags || book.tags.indexOf(currentTagFilter) === -1) return false;
+            }
             if (keywords.length > 0) {
-                var combinedText = normalizeText(book.title + ' ' + book.author + ' ' + book.folderName);
+                var tagText = (book.tags && Array.isArray(book.tags)) ? book.tags.join(' ') : '';
+                var combinedText = normalizeText(book.title + ' ' + book.author + ' ' + (book.series || '') + ' ' + tagText + ' ' + book.folderName);
                 return keywords.every(function(keyword) { return combinedText.includes(keyword); });
             }
             return true;
@@ -875,7 +971,7 @@
         libraryContainer.innerHTML = '';
 
         if (filtered.length === 0) {
-            libraryContainer.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:#94a3b8;">No se encontraron libros.</div>';
+            libraryContainer.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:#94a3b8;">No se encontraron libros con los filtros seleccionados.</div>';
             renderPaginationControls(0);
             return;
         }
@@ -899,6 +995,14 @@
                     return '<span class="format-badge ' + cls + '">' + fmt + '</span>';
                 }).join('');
 
+                var seriesHtml = book.series 
+                    ? '<span class="series-badge" onclick="filterBySeries(\'' + book.series.replace(/'/g, "\\'") + '\')">📚 ' + book.series + '</span>' 
+                    : '';
+
+                var tagsHtml = (book.tags && Array.isArray(book.tags)) 
+                    ? book.tags.map(function(t){ return '<span class="tag-badge" onclick="filterByTag(\'' + t.replace(/'/g, "\\'") + '\')">🏷️ ' + t + '</span>'; }).join(' ') 
+                    : '';
+
                 card.innerHTML = 
                     '<div class="cover-container" id="cover-zone-' + book.folderId + '">' + coverHTML + '</div>' +
                     '<div class="book-info">' +
@@ -910,6 +1014,8 @@
                             '<p class="book-author" id="author-' + book.folderId + '" onclick="filterByAuthor(\'' + book.author.replace(/'/g, "\\'") + '\')">' + book.author + '</p>' +
                             '<div class="book-meta">' +
                                 '<span id="formats-zone-' + book.folderId + '">' + badgesHtml + '</span>' +
+                                '<span id="series-zone-' + book.folderId + '">' + seriesHtml + '</span>' +
+                                '<span id="tags-zone-' + book.folderId + '">' + tagsHtml + '</span>' +
                             '</div>' +
                             '<div class="book-review" id="review-' + book.folderId + '">' + (book.review || 'Buscando sinopsis en la nube...') + '</div>' +
                         '</div>' +
@@ -975,7 +1081,7 @@
                     else if (nameLower.includes('cover.')) coverId = file.id;
                     
                     if (nameLower.endsWith('.epub')) { detectedFormats.push('EPUB'); fileToReadId = file.id; bookLink = file.webViewLink; }
-                    else if (nameLower.endsWith('.pdf')) { detectedFormats.push('PDF'); bookLink = file.webViewLink; }
+                    else if (nameLower.endsWith('.pdf')) { detectedFormats.push('PDF'); fileToReadId = file.id; bookLink = file.webViewLink; }
                     else if (nameLower.endsWith('.mobi')) { detectedFormats.push('MOBI'); if(!fileToReadId) fileToReadId = file.id; bookLink = file.webViewLink; }
                     else if (nameLower.endsWith('.cbr') || nameLower.endsWith('.cbz')) { detectedFormats.push('CBR/CBZ'); bookLink = file.webViewLink; }
                 });
@@ -1042,6 +1148,42 @@
                         book.review = descNode.textContent.trim();
                         var rEl = document.getElementById('review-' + book.folderId);
                         if (rEl) rEl.innerHTML = book.review;
+                    }
+
+                    // EXTRACCIÓN DE SERIE DE CALIBRE
+                    var metaTags = xmlDoc.getElementsByTagName("meta");
+                    var foundSeries = "";
+                    for (var m = 0; m < metaTags.length; m++) {
+                        if (metaTags[m].getAttribute("name") === "calibre:series") {
+                            foundSeries = metaTags[m].getAttribute("content") || "";
+                            break;
+                        }
+                    }
+                    if (foundSeries) {
+                        book.series = foundSeries.trim();
+                        var sEl = document.getElementById('series-zone-' + book.folderId);
+                        if (sEl) {
+                            sEl.innerHTML = '<span class="series-badge" onclick="filterBySeries(\'' + book.series.replace(/'/g, "\\'") + '\')">📚 ' + book.series + '</span>';
+                        }
+                    }
+
+                    // EXTRACCIÓN DE ETIQUETAS (TAGS/SUBJECTS)
+                    var subjectTags = xmlDoc.getElementsByTagName("dc:subject");
+                    var foundTags = [];
+                    for (var s = 0; s < subjectTags.length; s++) {
+                        var tagText = subjectTags[s].textContent ? subjectTags[s].textContent.trim() : "";
+                        if (tagText && foundTags.indexOf(tagText) === -1) {
+                            foundTags.push(tagText);
+                        }
+                    }
+                    if (foundTags.length > 0) {
+                        book.tags = foundTags;
+                        var tagsEl = document.getElementById('tags-zone-' + book.folderId);
+                        if (tagsEl) {
+                            tagsEl.innerHTML = foundTags.map(function(t){ 
+                                return '<span class="tag-badge" onclick="filterByTag(\'' + t.replace(/'/g, "\\'") + '\')">🏷️ ' + t + '</span>'; 
+                            }).join(' ');
+                        }
                     }
                 }
             }
@@ -1188,6 +1330,34 @@
     function filterByAuthor(authorName) {
         document.getElementById('searchBar').value = authorName;
         searchQuery = authorName;
+        currentPage = 1;
+        filterAndRender(false);
+    }
+
+    function filterBySeries(seriesName) {
+        currentSeriesFilter = seriesName;
+        var sSelect = document.getElementById('seriesSelect');
+        if (sSelect) sSelect.value = seriesName;
+        currentPage = 1;
+        filterAndRender(false);
+    }
+
+    function filterByTag(tagName) {
+        currentTagFilter = tagName;
+        var tSelect = document.getElementById('tagSelect');
+        if (tSelect) tSelect.value = tagName;
+        currentPage = 1;
+        filterAndRender(false);
+    }
+
+    function setSeriesFilter(series) {
+        currentSeriesFilter = series;
+        currentPage = 1;
+        filterAndRender(false);
+    }
+
+    function setTagFilter(tag) {
+        currentTagFilter = tag;
         currentPage = 1;
         filterAndRender(false);
     }
