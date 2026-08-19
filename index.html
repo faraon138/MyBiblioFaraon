@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Biblioteca de Faraon138</title>
     
     <!-- Librerías CDN para Visor EPUB -->
@@ -24,12 +24,13 @@
         }
 
         body {
-            font-family: 'Segoe UI', Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg-dark);
             color: var(--text-main);
             margin: 0;
             padding: 20px;
             scroll-behavior: smooth;
+            -webkit-font-smoothing: antialiased;
         }
         .container { max-width: 1200px; margin: 0 auto; display: none; }
 
@@ -66,7 +67,7 @@
             border-radius: 8px;
             box-sizing: border-box;
             outline: none;
-            font-size: 14px;
+            font-size: 16px; /* Evita zoom automático en Safari iOS */
         }
         .login-input:focus { border-color: var(--accent-blue); }
         .login-btn {
@@ -80,9 +81,10 @@
             font-weight: bold;
             cursor: pointer;
             transition: background 0.2s;
+            -webkit-appearance: none;
         }
         .login-btn:hover { background: var(--accent-hover); }
-        .login-error { color: #ef4444; font-size: 12px; margin-top: 10px; display: none; }
+        .login-error { color: #ef4444; font-size: 13px; margin-top: 10px; display: none; }
 
         /* HEADER */
         .header {
@@ -96,10 +98,10 @@
             border: 1px solid var(--border-color);
             position: relative;
         }
-        .header h1 { margin: 0 0 4px 0; font-size: 28px; color: #ffffff; font-weight: 700; letter-spacing: 0.5px; }
+        .header h1 { margin: 0 0 4px 0; font-size: 26px; color: #ffffff; font-weight: 700; letter-spacing: 0.5px; }
         .header p { margin: 0; font-size: 13px; color: var(--text-sub); }
 
-        .header-actions { display: flex; justify-content: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+        .header-actions { display: flex; justify-content: center; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
         .action-btn {
             background-color: #334155;
             color: #fff;
@@ -113,10 +115,10 @@
             display: inline-flex;
             align-items: center;
             gap: 5px;
+            -webkit-appearance: none;
         }
-        .action-btn:hover { background-color: var(--accent-blue); transform: translateY(-1px); }
+        .action-btn:hover { background-color: var(--accent-blue); }
 
-        /* PANEL DE ESTADÍSTICAS */
         .stats-panel {
             background: var(--header-bg);
             border: 1px solid var(--border-color);
@@ -137,13 +139,12 @@
         .stats-card h4 { margin: 0 0 5px 0; font-size: 12px; color: var(--text-sub); text-transform: uppercase; }
         .stats-card div { font-size: 14px; font-weight: bold; color: var(--text-main); }
 
-        /* CONTROLES / BUSCADOR / FILTROS */
         .controls-container { margin-bottom: 25px; display: flex; flex-direction: column; align-items: center; gap: 15px; }
         .search-bar-wrap { width: 100%; max-width: 650px; display: flex; gap: 10px; }
         .search-bar {
             flex: 1;
             padding: 12px 20px;
-            font-size: 16px;
+            font-size: 16px; /* Evita zoom automático en Safari */
             border: 2px solid var(--border-color);
             background-color: var(--card-bg);
             color: #ffffff;
@@ -151,8 +152,9 @@
             outline: none;
             transition: all 0.2s;
             box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            -webkit-appearance: none;
         }
-        .search-bar:focus { border-color: var(--accent-blue); box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3); }
+        .search-bar:focus { border-color: var(--accent-blue); }
 
         .sort-select {
             padding: 0 15px;
@@ -164,9 +166,10 @@
             font-size: 13px;
             font-weight: 600;
             cursor: pointer;
+            -webkit-appearance: none;
         }
 
-        .filter-container { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+        .filter-container { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; align-items: center; }
         .filter-btn {
             background-color: var(--card-bg);
             border: 1px solid var(--border-color);
@@ -177,16 +180,15 @@
             cursor: pointer;
             color: #cbd5e1;
             transition: all 0.2s;
+            -webkit-appearance: none;
         }
         .filter-btn:hover { border-color: #475569; background-color: #334155; }
         .filter-btn.active { background-color: var(--accent-blue); border-color: var(--accent-blue); color: #ffffff; }
         .filter-btn.active-status { background-color: var(--accent-gold); border-color: var(--accent-gold); color: #000; font-weight: bold; }
 
-        /* GRIDS */
         .library-grid-detail { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .library-grid-mosaic { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; }
 
-        /* TARJETA DETALLE */
         .book-card {
             background: var(--card-light);
             border-radius: 10px;
@@ -196,10 +198,8 @@
             gap: 18px;
             position: relative;
             box-sizing: border-box;
-            transition: transform 0.2s, box-shadow 0.2s;
             color: #333;
         }
-        .book-card:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4); }
 
         .cover-container {
             position: relative;
@@ -238,7 +238,7 @@
         .book-counter { font-size: 11px; color: #64748b; font-weight: 700; background: #f1f5f9; padding: 3px 8px; border-radius: 10px; white-space: nowrap; }
 
         .book-author { margin: 0 0 6px 0; color: #d97706; font-size: 14px; font-weight: 600; cursor: pointer; display: inline-block; }
-        .book-author:hover { text-decoration: underline; color: #b45309; }
+        .book-author:hover { text-decoration: underline; }
 
         .book-meta { margin: 0 0 8px 0; font-size: 12px; color: #64748b; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
         .format-badge { color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 10px; }
@@ -247,7 +247,7 @@
         .badge-mobi { background-color: #0284c7; }
         .badge-cbr { background-color: #9333ea; }
 
-        .book-review { margin: 0 0 12px 0; color: #334155; font-size: 13px; line-height: 1.45; text-align: justify; max-height: 80px; overflow-y: auto; }
+        .book-review { margin: 0 0 12px 0; color: #334155; font-size: 13px; line-height: 1.45; text-align: justify; max-height: 80px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 
         .card-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
         .btn-group { display: flex; gap: 6px; }
@@ -266,6 +266,7 @@
             align-items: center;
             gap: 4px;
             text-decoration: none;
+            -webkit-appearance: none;
         }
         .read-btn:hover { background-color: var(--accent-hover); }
 
@@ -278,9 +279,7 @@
             text-decoration: none;
             font-size: 12px;
             font-weight: 600;
-            transition: all 0.2s;
         }
-        .drive-icon-btn:hover { background-color: #e2e8f0; color: #0f172a; }
 
         .status-select {
             background: #f8fafc;
@@ -292,6 +291,7 @@
             border-radius: 6px;
             outline: none;
             cursor: pointer;
+            -webkit-appearance: none;
         }
         .fav-btn {
             background: none;
@@ -299,12 +299,10 @@
             font-size: 18px;
             cursor: pointer;
             color: #cbd5e1;
-            transition: transform 0.2s, color 0.2s;
             padding: 0 4px;
         }
-        .fav-btn.is-fav { color: var(--accent-gold); transform: scale(1.15); }
+        .fav-btn.is-fav { color: var(--accent-gold); }
 
-        /* TARJETA MOSAICO */
         .mosaic-card {
             background: var(--card-bg);
             border: 1px solid var(--border-color);
@@ -312,19 +310,15 @@
             overflow: hidden;
             position: relative;
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
             aspect-ratio: 1 / 1.5;
             display: flex;
             flex-direction: column;
         }
-        .mosaic-card:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 8px 16px rgba(0,0,0,0.5); }
         .mosaic-card .cover-container { width: 100%; height: 100%; border-radius: 0; }
         .mosaic-overlay {
             position: absolute;
             inset: 0;
             background: linear-gradient(to top, rgba(15,23,42,0.95) 0%, rgba(15,23,42,0.4) 60%, transparent 100%);
-            opacity: 0;
-            transition: opacity 0.2s;
             display: flex;
             flex-direction: column;
             justify-content: flex-end;
@@ -332,11 +326,9 @@
             box-sizing: border-box;
             color: white;
         }
-        .mosaic-card:hover .mosaic-overlay { opacity: 1; }
         .mosaic-title { font-size: 12px; font-weight: bold; line-height: 1.2; margin-bottom: 4px; }
         .mosaic-author { font-size: 10px; color: var(--accent-gold); }
 
-        /* PAGINACIÓN */
         .pagination-container {
             grid-column: 1 / -1;
             display: flex;
@@ -354,11 +346,9 @@
             font-weight: bold;
             border-radius: 25px;
             cursor: pointer;
-            transition: all 0.2s;
-            box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+            -webkit-appearance: none;
         }
-        .page-btn:hover { background-color: var(--accent-hover); }
-        .page-btn:disabled { background-color: #334155; color: #64748b; cursor: not-allowed; box-shadow: none; }
+        .page-btn:disabled { background-color: #334155; color: #64748b; cursor: not-allowed; }
         .page-info {
             font-size: 14px;
             font-weight: 600;
@@ -369,11 +359,11 @@
             border: 1px solid var(--border-color);
         }
 
-        /* MODALES */
         .modal-overlay {
             position: fixed;
             inset: 0;
             background: rgba(0,0,0,0.85);
+            -webkit-backdrop-filter: blur(5px);
             backdrop-filter: blur(5px);
             z-index: 1000;
             display: none;
@@ -394,7 +384,6 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
         }
         .reader-header {
             padding: 12px 20px;
@@ -405,7 +394,7 @@
             border-bottom: 1px solid var(--border-color);
         }
         .reader-title { font-size: 15px; font-weight: bold; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70%; }
-        .close-btn { background: #dc2626; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .close-btn { background: #dc2626; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-weight: bold; cursor: pointer; -webkit-appearance: none; }
 
         .reader-body { flex: 1; position: relative; background: #ffffff; overflow: hidden; display: flex; justify-content: center; align-items: center; }
         #epub-viewer { width: 100%; height: 100%; background: #ffffff; }
@@ -427,7 +416,6 @@
             max-width: 450px;
             width: 100%;
             text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
         }
 
         .back-to-top {
@@ -443,9 +431,9 @@
             font-size: 18px;
             font-weight: bold;
             cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
             display: none;
             z-index: 10;
+            -webkit-appearance: none;
         }
 
         @media (max-width: 900px) { .library-grid-detail { grid-template-columns: 1fr; } }
@@ -464,7 +452,7 @@
         <h2>🔒 Acceso Restringido</h2>
         <p>Biblioteca de Faraon138</p>
         <form onsubmit="handleLogin(event)">
-            <input type="text" id="login-user" class="login-input" placeholder="Usuario" autocomplete="username" required>
+            <input type="text" id="login-user" class="login-input" placeholder="Usuario" autocomplete="username" autocorrect="off" autocapitalize="none" required>
             <input type="password" id="login-pass" class="login-input" placeholder="Contraseña" autocomplete="current-password" required>
             <button type="submit" class="login-btn">Entrar</button>
             <div id="login-error" class="login-error">Credenciales incorrectas</div>
@@ -515,12 +503,12 @@
         </div>
         
         <div class="filter-container">
-            <button class="filter-btn active" onclick="setFormatFilter('ALL')">Todos</button>
-            <button class="filter-btn" onclick="setFormatFilter('EPUB')">EPUB</button>
-            <button class="filter-btn" onclick="setFormatFilter('PDF')">PDF</button>
-            <button class="filter-btn" onclick="setFormatFilter('MOBI')">MOBI</button>
-            <button class="filter-btn" onclick="setFormatFilter('CBR/CBZ')">CBR/CBZ</button>
-            <span>|</span>
+            <button class="filter-btn active" id="btn-fmt-all" onclick="setFormatFilter('ALL')">Todos</button>
+            <button class="filter-btn" id="btn-fmt-epub" onclick="setFormatFilter('EPUB')">EPUB</button>
+            <button class="filter-btn" id="btn-fmt-pdf" onclick="setFormatFilter('PDF')">PDF</button>
+            <button class="filter-btn" id="btn-fmt-mobi" onclick="setFormatFilter('MOBI')">MOBI</button>
+            <button class="filter-btn" id="btn-fmt-cbr" onclick="setFormatFilter('CBR/CBZ')">CBR/CBZ</button>
+            <span style="color:#64748b;">|</span>
             <button class="filter-btn" id="filter-favs" onclick="setStatusFilter('FAV')">★ Favoritos</button>
             <button class="filter-btn" id="filter-reading" onclick="setStatusFilter('leyendo')">📖 Leyendo</button>
             <button class="filter-btn" id="filter-read" onclick="setStatusFilter('leido')">✔ Leídos</button>
@@ -544,9 +532,9 @@
             <div id="reader-loading" style="color:#0f172a; font-size:15px; font-weight:bold; text-align:center; padding:20px;">Cargando e-book digital...</div>
         </div>
         <div class="reader-footer">
-            <button class="action-btn" id="epub-prev" onclick="epubRendition?.prev()" style="display:none;">← Capítulo Anterior</button>
-            <span style="font-size:11px; color:#94a3b8;">Visor EPUB Integrado (Usa flechas ← → del teclado)</span>
-            <button class="action-btn" id="epub-next" onclick="epubRendition?.next()" style="display:none;">Siguiente Capítulo →</button>
+            <button class="action-btn" id="epub-prev" onclick="epubRendition?.prev()" style="display:none;">← Anterior</button>
+            <span style="font-size:11px; color:#94a3b8;">Visor EPUB Integrado</span>
+            <button class="action-btn" id="epub-next" onclick="epubRendition?.next()" style="display:none;">Siguiente →</button>
         </div>
     </div>
 </div>
@@ -567,19 +555,51 @@
 
 <script>
     // ==========================================
+    // CAPA DE ALMACENAMIENTO SEGURO (SAFE STORAGE)
+    // ==========================================
+    const memoryStore = {};
+
+    function safeGet(key, isSession = false) {
+        try {
+            const storage = isSession ? window.sessionStorage : window.localStorage;
+            if (storage) return storage.getItem(key);
+        } catch (e) {}
+        return memoryStore[key] || null;
+    }
+
+    function safeSet(key, value, isSession = false) {
+        try {
+            const storage = isSession ? window.sessionStorage : window.localStorage;
+            if (storage) {
+                storage.setItem(key, value);
+                return;
+            }
+        } catch (e) {}
+        memoryStore[key] = value;
+    }
+
+    function safeRemove(key, isSession = false) {
+        try {
+            const storage = isSession ? window.sessionStorage : window.localStorage;
+            if (storage) storage.removeItem(key);
+        } catch (e) {}
+        delete memoryStore[key];
+    }
+
+    // ==========================================
     // CONFIGURACIÓN DE SEGURIDAD (MULTI-USUARIO)
     // ==========================================
     const USERS = {
-        'faraon138': '12345',      // Usuario Principal
-        'invitado': 'clave123',     // Usuario 2
-        'familiar': 'lectura2026'   // Usuario 3 (agrega más si deseas)
+        'faraon138': '12345',      
+        'invitado': 'clave123',     
+        'familiar': 'lectura2026'   
     };
 
-    const AUTH_SESSION_KEY = 'faraon138_logged_in';
-    const AUTH_CURRENT_USER = 'faraon138_current_user';
+    const AUTH_SESSION_KEY = 'faraon138_logged_in_v10';
+    const AUTH_CURRENT_USER = 'faraon138_current_user_v10';
 
     function checkAuth() {
-        if (sessionStorage.getItem(AUTH_SESSION_KEY) === 'true') {
+        if (safeGet(AUTH_SESSION_KEY, true) === 'true') {
             document.getElementById('login-overlay').style.display = 'none';
             document.getElementById('main-container').style.display = 'block';
             initLibrary();
@@ -590,14 +610,14 @@
     }
 
     function handleLogin(e) {
-        e.preventDefault();
+        if (e && e.preventDefault) e.preventDefault();
         const user = document.getElementById('login-user').value.trim();
         const pass = document.getElementById('login-pass').value.trim();
         const errorEl = document.getElementById('login-error');
 
         if (USERS[user] && USERS[user] === pass) {
-            sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
-            sessionStorage.setItem(AUTH_CURRENT_USER, user);
+            safeSet(AUTH_SESSION_KEY, 'true', true);
+            safeSet(AUTH_CURRENT_USER, user, true);
             errorEl.style.display = 'none';
             checkAuth();
         } else {
@@ -606,8 +626,8 @@
     }
 
     function handleLogout() {
-        sessionStorage.removeItem(AUTH_SESSION_KEY);
-        sessionStorage.removeItem(AUTH_CURRENT_USER);
+        safeRemove(AUTH_SESSION_KEY, true);
+        safeRemove(AUTH_CURRENT_USER, true);
         location.reload();
     }
 
@@ -616,8 +636,8 @@
     // ==========================================
     const API_KEY = 'AIzaSyABYJpop2BBwvK0cPpdXv-Mge3Wc_SanwQ'; 
     const FOLDER_ID = '1DXoxedW-epDoOGaHFHyCEno2G7OdCGmh';
-    const CACHE_KEY = 'faraon138_library_cache_v9';
-    const USER_DATA_KEY = 'faraon138_user_preferences_v9';
+    const CACHE_KEY = 'faraon138_library_cache_v10';
+    const USER_DATA_KEY = 'faraon138_user_preferences_v10';
 
     let globalBooks = [];       
     let userData = { favorites: {}, status: {} }; 
@@ -658,31 +678,35 @@
     }
 
     function loadUserData() {
-        const stored = localStorage.getItem(USER_DATA_KEY);
-        if (stored) userData = JSON.parse(stored);
+        const stored = safeGet(USER_DATA_KEY);
+        if (stored) {
+            try { userData = JSON.parse(stored); } catch(e) {}
+        }
     }
 
     function saveUserData() {
-        localStorage.setItem(USER_DATA_KEY, JSON.stringify(userData));
+        safeSet(USER_DATA_KEY, JSON.stringify(userData));
     }
 
     async function initLibrary() {
         loadUserData();
-        const cached = localStorage.getItem(CACHE_KEY);
+        const cached = safeGet(CACHE_KEY);
         
         if (cached) {
-            globalBooks = JSON.parse(cached);
-            document.getElementById('catalog-status').innerText = `Catálogo cargado desde memoria (${globalBooks.length} libros)`;
-            firstRenderDone = true;
-            updateStats();
-            filterAndRender(false);
-        } else {
-            await fetchCalibreLibraryFromDrive();
+            try {
+                globalBooks = JSON.parse(cached);
+                document.getElementById('catalog-status').innerText = `Catálogo cargado desde memoria (${globalBooks.length} libros)`;
+                firstRenderDone = true;
+                updateStats();
+                filterAndRender(false);
+                return;
+            } catch(e) {}
         }
+        await fetchCalibreLibraryFromDrive();
     }
 
     async function forceReSync() {
-        localStorage.removeItem(CACHE_KEY);
+        safeRemove(CACHE_KEY);
         globalBooks = [];
         firstRenderDone = false;
         document.getElementById('catalog-status').innerText = "Sincronizando con Google Drive...";
@@ -743,7 +767,7 @@
             }
 
             statusPara.innerText = `Catálogo completo sincronizado (${globalBooks.length} libros disponibles)`;
-            localStorage.setItem(CACHE_KEY, JSON.stringify(globalBooks));
+            safeSet(CACHE_KEY, JSON.stringify(globalBooks));
             updateStats();
             filterAndRender(false);
 
@@ -854,7 +878,7 @@
                 card.id = `card-${book.folderId}`;
                 
                 let coverHTML = book.coverId 
-                    ? `<img class="book-cover" src="https://drive.google.com/thumbnail?id=${book.coverId}&sz=w500" alt="Portada">`
+                    ? `<img class="book-cover" src="https://drive.google.com/thumbnail?id=${book.coverId}&sz=w500" alt="Portada" loading="lazy">`
                     : createPlaceholderCoverHTML(book.title, book.author);
 
                 let badgesHtml = (book.formats || ['EPUB']).map(fmt => {
@@ -899,7 +923,7 @@
                 card.onclick = () => openReader(book.folderId);
 
                 let coverHTML = book.coverId 
-                    ? `<img class="book-cover" src="https://drive.google.com/thumbnail?id=${book.coverId}&sz=w500" alt="Portada">`
+                    ? `<img class="book-cover" src="https://drive.google.com/thumbnail?id=${book.coverId}&sz=w500" alt="Portada" loading="lazy">`
                     : createPlaceholderCoverHTML(book.title, book.author);
 
                 card.innerHTML = `
@@ -954,7 +978,7 @@
 
             const coverZone = document.getElementById(`cover-zone-${book.folderId}`);
             if (coverZone && coverId) {
-                coverZone.innerHTML = `<img class="book-cover" src="https://drive.google.com/thumbnail?id=${coverId}&sz=w500" alt="Portada">`;
+                coverZone.innerHTML = `<img class="book-cover" src="https://drive.google.com/thumbnail?id=${coverId}&sz=w500" alt="Portada" loading="lazy">`;
             }
             const formatsZone = document.getElementById(`formats-zone-${book.folderId}`);
             if (formatsZone) {
@@ -1011,7 +1035,7 @@
                 }
             }
 
-            localStorage.setItem(CACHE_KEY, JSON.stringify(globalBooks));
+            safeSet(CACHE_KEY, JSON.stringify(globalBooks));
 
         } catch (err) {}
     }
@@ -1089,7 +1113,6 @@
         }
     });
 
-    // MODAL "SORPRÉNDEME"
     async function openRandomBook() {
         if (globalBooks.length === 0) return;
         const randomBook = globalBooks[Math.floor(Math.random() * globalBooks.length)];
@@ -1105,7 +1128,7 @@
         }
 
         let coverHTML = randomBook.coverId 
-            ? `<img style="width:110px; height:160px; object-fit:cover; border-radius:6px; margin: 0 auto 12px; display:block; box-shadow:0 4px 10px rgba(0,0,0,0.5);" src="https://drive.google.com/thumbnail?id=${randomBook.coverId}&sz=w500" alt="Portada">`
+            ? `<img style="width:110px; height:160px; object-fit:cover; border-radius:6px; margin: 0 auto 12px; display:block; box-shadow:0 4px 10px rgba(0,0,0,0.5);" src="https://drive.google.com/thumbnail?id=${randomBook.coverId}&sz=w500" alt="Portada" loading="lazy">`
             : `<div style="width:110px; height:160px; margin:0 auto 12px; border-radius:6px; overflow:hidden; display:inline-block;">${createPlaceholderCoverHTML(randomBook.title, randomBook.author)}</div>`;
 
         let badgesHtml = (randomBook.formats || ['EPUB']).map(fmt => {
@@ -1149,16 +1172,41 @@
 
     function setFormatFilter(fmt) {
         currentFormatFilter = fmt;
-        document.querySelectorAll('.filter-container .filter-btn').forEach(b => b.classList.remove('active'));
-        event.target.classList.add('active');
+        const fmtMap = {
+            'ALL': 'btn-fmt-all',
+            'EPUB': 'btn-fmt-epub',
+            'PDF': 'btn-fmt-pdf',
+            'MOBI': 'btn-fmt-mobi',
+            'CBR/CBZ': 'btn-fmt-cbr'
+        };
+        ['btn-fmt-all', 'btn-fmt-epub', 'btn-fmt-pdf', 'btn-fmt-mobi', 'btn-fmt-cbr'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('active');
+        });
+        if (fmtMap[fmt]) {
+            const activeEl = document.getElementById(fmtMap[fmt]);
+            if (activeEl) activeEl.classList.add('active');
+        }
         currentPage = 1;
         filterAndRender(false);
     }
 
     function setStatusFilter(status) {
         currentStatusFilter = currentStatusFilter === status ? 'ALL' : status;
-        document.querySelectorAll('.filter-container .filter-btn').forEach(b => b.classList.remove('active-status'));
-        if (currentStatusFilter !== 'ALL') event.target.classList.add('active-status');
+        const statusMap = {
+            'FAV': 'filter-favs',
+            'leyendo': 'filter-reading',
+            'leido': 'filter-read',
+            'pendiente': 'filter-pending'
+        };
+        Object.values(statusMap).forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('active-status');
+        });
+        if (currentStatusFilter !== 'ALL' && statusMap[currentStatusFilter]) {
+            const activeEl = document.getElementById(statusMap[currentStatusFilter]);
+            if (activeEl) activeEl.classList.add('active-status');
+        }
         currentPage = 1;
         filterAndRender(false);
     }
