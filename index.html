@@ -141,10 +141,10 @@
         .stats-card div { font-size: 14px; font-weight: bold; color: var(--text-main); }
 
         .controls-container { margin-bottom: 25px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
-        .search-bar-wrap { width: 100%; max-width: 750px; display: flex; gap: 10px; flex-wrap: wrap; }
+        .search-bar-wrap { width: 100%; max-width: 800px; display: flex; gap: 10px; flex-wrap: wrap; }
         .search-bar {
             flex: 1;
-            min-width: 250px;
+            min-width: 240px;
             padding: 12px 20px;
             font-size: 16px;
             border: 2px solid var(--border-color);
@@ -170,7 +170,6 @@
             cursor: pointer;
             -webkit-appearance: none;
         }
-        .filter-select:focus, .sort-select:focus { border-color: var(--accent-blue); }
 
         .filter-container { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; align-items: center; max-width: 1000px; }
         .filter-btn {
@@ -250,7 +249,6 @@
         .badge-mobi { background-color: #0284c7; }
         .badge-cbr { background-color: #9333ea; }
 
-        /* INSIGNIAS DE SERIES Y ETIQUETAS */
         .series-badge {
             background-color: #0284c7;
             color: #ffffff;
@@ -400,7 +398,7 @@
             display: none;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            padding: 15px;
             box-sizing: border-box;
         }
         .modal-overlay.active { display: flex; }
@@ -408,8 +406,8 @@
         .reader-modal-content {
             background: #0f172a;
             width: 100%;
-            max-width: 1000px;
-            height: 90vh;
+            max-width: 1050px;
+            height: 92vh;
             border-radius: 12px;
             border: 1px solid var(--border-color);
             display: flex;
@@ -417,18 +415,43 @@
             overflow: hidden;
         }
         .reader-header {
-            padding: 12px 20px;
+            padding: 10px 16px;
             background: #1e293b;
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid var(--border-color);
+            gap: 10px;
         }
-        .reader-title { font-size: 15px; font-weight: bold; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70%; }
-        .close-btn { background: #dc2626; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-weight: bold; cursor: pointer; -webkit-appearance: none; }
+        .reader-title { font-size: 14px; font-weight: bold; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+        .reader-header-actions { display: flex; gap: 8px; align-items: center; }
+        .close-btn { background: #dc2626; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-weight: bold; cursor: pointer; -webkit-appearance: none; font-size: 13px; }
 
-        .reader-body { flex: 1; position: relative; background: #ffffff; overflow: hidden; display: flex; justify-content: center; align-items: center; }
-        #epub-viewer { width: 100%; height: 100%; background: #ffffff; }
+        /* VISOR FIJO COMPATIBLE CON WEBKIT / SAFARI */
+        .reader-body { 
+            flex: 1; 
+            position: relative; 
+            background: #ffffff; 
+            width: 100%; 
+            height: 100%;
+            min-height: 0; 
+            overflow: hidden; 
+        }
+        #epub-viewer { 
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100% !important; 
+            height: 100% !important; 
+            background: #ffffff; 
+        }
+        #epub-viewer iframe {
+            width: 100% !important;
+            height: 100% !important;
+            border: none;
+        }
 
         .reader-footer {
             padding: 10px 20px;
@@ -532,12 +555,10 @@
                 <option value="format">Por Formato</option>
             </select>
             
-            <!-- SELECTOR DE SERIES -->
             <select id="seriesSelect" class="filter-select" onchange="setSeriesFilter(this.value)">
                 <option value="ALL">📚 Todas las Series</option>
             </select>
 
-            <!-- SELECTOR DE ETIQUETAS/GÉNEROS -->
             <select id="tagSelect" class="filter-select" onchange="setTagFilter(this.value)">
                 <option value="ALL">🏷️ Todas las Etiquetas</option>
             </select>
@@ -561,21 +582,24 @@
     <div id="pagination" class="pagination-container"></div>
 </div>
 
-<!-- MODAL VISOR EPUB -->
+<!-- MODAL VISOR EPUB COMPATIBLE CON IPAD -->
 <div id="readerModal" class="modal-overlay">
     <div class="reader-modal-content">
         <div class="reader-header">
             <div class="reader-title" id="reader-book-title">Leyendo...</div>
-            <button class="close-btn" onclick="closeReader()">✕ Cerrar Lector</button>
+            <div class="reader-header-actions">
+                <a id="btn-apple-books" href="#" target="_blank" class="action-btn" style="background:#0284c7; text-decoration:none; color:white;">📲 Abrir en Apple Books</a>
+                <button class="close-btn" onclick="closeReader()">✕ Cerrar</button>
+            </div>
         </div>
         <div class="reader-body">
-            <div id="epub-viewer" style="display:none;"></div>
-            <div id="reader-loading" style="color:#0f172a; font-size:15px; font-weight:bold; text-align:center; padding:20px;">Cargando e-book digital...</div>
+            <div id="epub-viewer"></div>
+            <div id="reader-loading" style="color:#0f172a; font-size:15px; font-weight:bold; text-align:center; padding:30px; position:absolute; top:40%; width:100%; box-sizing:border-box;">Cargando e-book digital en iPad...</div>
         </div>
         <div class="reader-footer">
-            <button class="action-btn" id="epub-prev" onclick="prevEpubPage()" style="display:none;">← Anterior</button>
-            <span style="font-size:11px; color:#94a3b8;">Visor EPUB Integrado</span>
-            <button class="action-btn" id="epub-next" onclick="nextEpubPage()" style="display:none;">Siguiente →</button>
+            <button class="action-btn" id="epub-prev" onclick="prevEpubPage()">← Anterior</button>
+            <span style="font-size:11px; color:#94a3b8;">Desliza con el dedo o pulsa las flechas</span>
+            <button class="action-btn" id="epub-next" onclick="nextEpubPage()">Siguiente →</button>
         </div>
     </div>
 </div>
@@ -636,8 +660,8 @@
         'familiar': 'lectura2026'   
     };
 
-    var AUTH_SESSION_KEY = 'faraon138_logged_in_v12';
-    var AUTH_CURRENT_USER = 'faraon138_current_user_v12';
+    var AUTH_SESSION_KEY = 'faraon138_logged_in_v13';
+    var AUTH_CURRENT_USER = 'faraon138_current_user_v13';
 
     function checkAuth() {
         if (safeGet(AUTH_SESSION_KEY, true) === 'true') {
@@ -690,8 +714,8 @@
     // ==========================================
     var API_KEY = 'AIzaSyABYJpop2BBwvK0cPpdXv-Mge3Wc_SanwQ'; 
     var FOLDER_ID = '1DXoxedW-epDoOGaHFHyCEno2G7OdCGmh';
-    var CACHE_KEY = 'faraon138_library_cache_v12';
-    var USER_DATA_KEY = 'faraon138_user_preferences_v12';
+    var CACHE_KEY = 'faraon138_library_cache_v13';
+    var USER_DATA_KEY = 'faraon138_user_preferences_v13';
 
     var globalBooks = [];       
     var userData = { favorites: {}, status: {} }; 
@@ -742,15 +766,12 @@
         safeSet(USER_DATA_KEY, JSON.stringify(userData));
     }
 
-    // POBLAR SELECTORES DINÁMICOS DE SERIES Y ETIQUETAS
     function populateDynamicFilters() {
         var seriesMap = {};
         var tagMap = {};
 
         globalBooks.forEach(function(b) {
-            if (b.series && b.series.trim()) {
-                seriesMap[b.series.trim()] = true;
-            }
+            if (b.series && b.series.trim()) seriesMap[b.series.trim()] = true;
             if (b.tags && Array.isArray(b.tags)) {
                 b.tags.forEach(function(t) {
                     if (t && t.trim()) tagMap[t.trim()] = true;
@@ -938,11 +959,9 @@
             if (['leyendo', 'leido', 'pendiente'].includes(currentStatusFilter)) {
                 if (userData.status[book.folderId] !== currentStatusFilter) return false;
             }
-            // FILTRO DE SERIE
             if (currentSeriesFilter !== 'ALL') {
                 if (!book.series || book.series !== currentSeriesFilter) return false;
             }
-            // FILTRO DE ETIQUETA
             if (currentTagFilter !== 'ALL') {
                 if (!book.tags || book.tags.indexOf(currentTagFilter) === -1) return false;
             }
@@ -1081,7 +1100,7 @@
                     else if (nameLower.includes('cover.')) coverId = file.id;
                     
                     if (nameLower.endsWith('.epub')) { detectedFormats.push('EPUB'); fileToReadId = file.id; bookLink = file.webViewLink; }
-                    else if (nameLower.endsWith('.pdf')) { detectedFormats.push('PDF'); fileToReadId = file.id; bookLink = file.webViewLink; }
+                    else if (nameLower.endsWith('.pdf')) { detectedFormats.push('PDF'); bookLink = file.webViewLink; }
                     else if (nameLower.endsWith('.mobi')) { detectedFormats.push('MOBI'); if(!fileToReadId) fileToReadId = file.id; bookLink = file.webViewLink; }
                     else if (nameLower.endsWith('.cbr') || nameLower.endsWith('.cbz')) { detectedFormats.push('CBR/CBZ'); bookLink = file.webViewLink; }
                 });
@@ -1150,7 +1169,6 @@
                         if (rEl) rEl.innerHTML = book.review;
                     }
 
-                    // EXTRACCIÓN DE SERIE DE CALIBRE
                     var metaTags = xmlDoc.getElementsByTagName("meta");
                     var foundSeries = "";
                     for (var m = 0; m < metaTags.length; m++) {
@@ -1167,7 +1185,6 @@
                         }
                     }
 
-                    // EXTRACCIÓN DE ETIQUETAS (TAGS/SUBJECTS)
                     var subjectTags = xmlDoc.getElementsByTagName("dc:subject");
                     var foundTags = [];
                     for (var s = 0; s < subjectTags.length; s++) {
@@ -1193,6 +1210,40 @@
         } catch (err) {}
     }
 
+    // DESCARGADOR RESILIENTE PARA SAFARI / IPAD
+    async function getEpubBinaryBuffer(fileId) {
+        var directUrl = 'https://www.googleapis.com/drive/v3/files/' + fileId + '?alt=media&key=' + API_KEY;
+        
+        try {
+            var resp = await fetch(directUrl);
+            if (resp.ok) {
+                var buf = await resp.arrayBuffer();
+                if (buf && buf.byteLength > 500) return buf;
+            }
+        } catch(e) {}
+
+        try {
+            var proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(directUrl);
+            var resp2 = await fetch(proxyUrl);
+            if (resp2.ok) {
+                var buf2 = await resp2.arrayBuffer();
+                if (buf2 && buf2.byteLength > 500) return buf2;
+            }
+        } catch(e) {}
+
+        try {
+            var proxyUrl2 = 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(directUrl);
+            var resp3 = await fetch(proxyUrl2);
+            if (resp3.ok) {
+                var buf3 = await resp3.arrayBuffer();
+                if (buf3 && buf3.byteLength > 500) return buf3;
+            }
+        } catch(e) {}
+
+        throw new Error("No se pudo descargar el contenido EPUB");
+    }
+
+    // LECTOR EPUB COMPATIBLE CON IPAD / WEBKIT
     async function openReader(folderId) {
         var book = globalBooks.find(function(b) { return b.folderId === folderId; });
         if (!book) return;
@@ -1206,33 +1257,29 @@
         var titleEl = document.getElementById('reader-book-title');
         var loadingEl = document.getElementById('reader-loading');
         var epubViewer = document.getElementById('epub-viewer');
+        var appleBtn = document.getElementById('btn-apple-books');
 
         titleEl.innerText = 'Leyendo: ' + book.title;
         modal.classList.add('active');
         loadingEl.style.display = 'block';
-        loadingEl.innerHTML = "Descargando e-book y preparando visor...";
+        loadingEl.innerHTML = "Cargando e-book digital en iPad...";
         epubViewer.style.display = 'none';
 
-        document.getElementById('epub-prev').style.display = 'none';
-        document.getElementById('epub-next').style.display = 'none';
+        var downloadLink = 'https://drive.google.com/uc?export=download&id=' + (book.fileToReadId || book.folderId);
+        if (appleBtn) {
+            appleBtn.setAttribute('href', downloadLink);
+        }
 
         if (!book.fileToReadId) {
-            loadingEl.innerHTML = 'No se detectó un archivo legible directo.<br><br><a href="' + (book.bookLink || book.webViewLink) + '" target="_blank" class="read-btn">📂 Abrir en Google Drive</a>';
+            loadingEl.innerHTML = 'No se detectó un archivo EPUB directo.<br><br><a href="' + (book.bookLink || book.webViewLink) + '" target="_blank" class="read-btn">📂 Abrir en Google Drive</a>';
             return;
         }
 
         try {
-            var directUrl = 'https://www.googleapis.com/drive/v3/files/' + book.fileToReadId + '?alt=media&key=' + API_KEY;
-            var response = await fetch(directUrl);
-            
-            if (!response.ok) throw new Error("Error en la respuesta de Drive API");
-            
-            var arrayBuffer = await response.arrayBuffer();
+            var arrayBuffer = await getEpubBinaryBuffer(book.fileToReadId);
 
             loadingEl.style.display = 'none';
             epubViewer.style.display = 'block';
-            document.getElementById('epub-prev').style.display = 'inline-block';
-            document.getElementById('epub-next').style.display = 'inline-block';
 
             if (epubRendition) {
                 try { epubRendition.destroy(); } catch(e){}
@@ -1240,13 +1287,37 @@
             epubViewer.innerHTML = '';
 
             var ePubBook = ePub(arrayBuffer);
-            epubRendition = ePubBook.renderTo("epub-viewer", { width: "100%", height: "100%" });
+            epubRendition = ePubBook.renderTo("epub-viewer", { 
+                width: "100%", 
+                height: "100%",
+                spread: "none",
+                flow: "paginated"
+            });
+
             await epubRendition.display();
+
+            // GESTO TÁCTIL (SWIPE) PARA IPAD
+            epubRendition.on("rendered", function(section, iframeView) {
+                if (iframeView && iframeView.document) {
+                    var doc = iframeView.document;
+                    var startX = 0;
+                    doc.addEventListener("touchstart", function(e) {
+                        startX = e.changedTouches[0].screenX;
+                    }, { passive: true });
+                    doc.addEventListener("touchend", function(e) {
+                        var diffX = e.changedTouches[0].screenX - startX;
+                        if (diffX < -50) nextEpubPage();
+                        if (diffX > 50) prevEpubPage();
+                    }, { passive: true });
+                }
+            });
 
         } catch (e) {
             console.error("Error abriendo EPUB:", e);
             loadingEl.style.display = 'block';
-            loadingEl.innerHTML = 'No se pudo desplegar el visor interno de este e-book.<br><br><a href="' + (book.bookLink || book.webViewLink) + '" target="_blank" class="read-btn" style="text-decoration:none;">📂 Abrir directamente en Google Drive</a>';
+            loadingEl.innerHTML = 'No se pudo desplegar el visor dentro del navegador.<br><br>' +
+                '<a href="' + downloadLink + '" target="_blank" class="read-btn" style="background:#0284c7; padding:10px 18px; font-size:14px;">📲 Abrir en App Libros de Apple</a><br><br>' +
+                '<a href="' + (book.bookLink || book.webViewLink) + '" target="_blank" style="color:#94a3b8; font-size:12px;">Abrir carpeta en Google Drive</a>';
         }
     }
 
@@ -1449,7 +1520,6 @@
 
     function scrollToTop() { window.scrollTo({top: 0, behavior: 'smooth'}); }
 
-    // INICIAR CON CONTROL DE ACCESO
     checkAuth();
 </script>
 
