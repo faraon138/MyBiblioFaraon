@@ -462,6 +462,26 @@
         .reader-title { font-size: 14px; font-weight: bold; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 140px; }
         .reader-header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: nowrap; flex-shrink: 0; }
         
+        /* BOTÓN DE TEMA OSCURO/CLARO */
+        .theme-toggle-btn {
+            background: #334155;
+            color: #ffffff;
+            border: 1px solid var(--border-color);
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: bold;
+            border-radius: 20px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            touch-action: manipulation;
+            -webkit-appearance: none;
+        }
+        .theme-toggle-btn:active {
+            background: var(--accent-blue);
+        }
+
         /* CONTROLES DE TAMAÑO DE FUENTE */
         .font-controls {
             display: inline-flex;
@@ -500,11 +520,12 @@
         .reader-body { 
             flex: 1; 
             position: relative; 
-            background: #ffffff; 
+            background: #121212; 
             width: 100%; 
             height: 100%;
             min-height: 0; 
             overflow: hidden; 
+            transition: background 0.3s ease;
         }
         #epub-viewer { 
             position: absolute;
@@ -514,7 +535,7 @@
             bottom: 0;
             width: 100% !important; 
             height: 100% !important; 
-            background: #ffffff; 
+            background: transparent; 
         }
         #epub-viewer iframe {
             width: 100% !important;
@@ -666,12 +687,14 @@
     <div id="pagination" class="pagination-container"></div>
 </div>
 
-<!-- MODAL VISOR EPUB ROBUSTO CON CONTROL DE TAMAÑO DE LETRA -->
+<!-- MODAL VISOR EPUB ROBUSTO CON CONTROL DE TAMAÑO Y MODO OSCURO -->
 <div id="readerModal">
     <div class="reader-modal-content">
         <div class="reader-header">
             <div class="reader-title" id="reader-book-title">Cargando libro...</div>
             <div class="reader-header-actions">
+                <!-- BOTÓN MODO OSCURO / CLARO -->
+                <button type="button" class="theme-toggle-btn" id="btn-reader-theme" onclick="toggleReaderTheme()">🌙 Modo Noche</button>
                 <!-- CONTROLES DE LETRA -->
                 <div class="font-controls">
                     <button type="button" class="font-btn" onclick="changeFontSize(-15)" title="Reducir letra">A-</button>
@@ -682,9 +705,9 @@
                 <button class="close-btn" onclick="closeReader()">✕ Cerrar</button>
             </div>
         </div>
-        <div class="reader-body">
+        <div class="reader-body" id="reader-body-container">
             <div id="epub-viewer"></div>
-            <div id="reader-loading" style="color:#0f172a; font-size:15px; font-weight:bold; text-align:center; padding:30px; position:absolute; top:35%; width:100%; box-sizing:border-box;">Abriendo libro digital...</div>
+            <div id="reader-loading" style="color:#ffffff; font-size:15px; font-weight:bold; text-align:center; padding:30px; position:absolute; top:35%; width:100%; box-sizing:border-box;">Abriendo libro digital...</div>
         </div>
         <div class="reader-footer">
             <button class="action-btn" id="epub-prev" onclick="prevEpubPage()">← Anterior</button>
@@ -745,12 +768,14 @@
         'familiar': 'lectura2026'   
     };
 
-    var AUTH_SESSION_KEY = 'faraon138_logged_in_v17';
-    var AUTH_CURRENT_USER = 'faraon138_current_user_v17';
+    var AUTH_SESSION_KEY = 'faraon138_logged_in_v18';
+    var AUTH_CURRENT_USER = 'faraon138_current_user_v18';
     var FONT_SIZE_KEY = 'faraon138_reader_font_size';
+    var THEME_KEY = 'faraon138_reader_theme';
 
-    // TAMAÑO DE LETRA DINÁMICO (Por defecto 115% para iPad)
+    // TAMAÑO Y TEMA POR DEFECTO
     var currentFontSize = parseInt(safeGet(FONT_SIZE_KEY) || '115');
+    var currentReaderTheme = safeGet(THEME_KEY) || 'dark'; // Inicia en modo oscuro por defecto
 
     window.checkAuth = function() {
         if (safeGet(AUTH_SESSION_KEY, true) === 'true') {
@@ -798,8 +823,8 @@
     // GOOGLE DRIVE CONFIG
     var API_KEY = 'AIzaSyABYJpop2BBwvK0cPpdXv-Mge3Wc_SanwQ'; 
     var FOLDER_ID = '1DXoxedW-epDoOGaHFHyCEno2G7OdCGmh';
-    var CACHE_KEY = 'faraon138_library_cache_v17';
-    var USER_DATA_KEY = 'faraon138_user_preferences_v17';
+    var CACHE_KEY = 'faraon138_library_cache_v18';
+    var USER_DATA_KEY = 'faraon138_user_preferences_v18';
 
     var globalBooks = [];       
     var userData = { favorites: {}, status: {} }; 
@@ -850,7 +875,7 @@
         safeSet(USER_DATA_KEY, JSON.stringify(userData));
     }
 
-    // GESTIÓN DE TAMAÑO DE LETRA
+    // CONTROL DE TAMAÑO DE LETRA
     window.changeFontSize = function(delta) {
         currentFontSize = Math.max(70, Math.min(250, currentFontSize + delta));
         safeSet(FONT_SIZE_KEY, currentFontSize.toString());
@@ -864,6 +889,37 @@
         var label = document.getElementById('font-size-label');
         if (label) label.innerText = currentFontSize + "%";
     }
+
+    // CONTROL DE MODO OSCURO / CLARO PARA EL LECTOR
+    function applyReaderTheme() {
+        var btn = document.getElementById('btn-reader-theme');
+        var bodyContainer = document.getElementById('reader-body-container');
+        var loadingEl = document.getElementById('reader-loading');
+
+        if (currentReaderTheme === 'dark') {
+            if (btn) btn.innerHTML = '☀️ Modo Claro';
+            if (bodyContainer) bodyContainer.style.background = '#121212';
+            if (loadingEl) loadingEl.style.color = '#ffffff';
+            if (epubRendition && epubRendition.themes) {
+                epubRendition.themes.select('dark');
+                epubRendition.themes.fontSize(currentFontSize + "%");
+            }
+        } else {
+            if (btn) btn.innerHTML = '🌙 Modo Noche';
+            if (bodyContainer) bodyContainer.style.background = '#ffffff';
+            if (loadingEl) loadingEl.style.color = '#0f172a';
+            if (epubRendition && epubRendition.themes) {
+                epubRendition.themes.select('light');
+                epubRendition.themes.fontSize(currentFontSize + "%");
+            }
+        }
+    }
+
+    window.toggleReaderTheme = function() {
+        currentReaderTheme = (currentReaderTheme === 'dark') ? 'light' : 'dark';
+        safeSet(THEME_KEY, currentReaderTheme);
+        applyReaderTheme();
+    };
 
     function populateDynamicFilters() {
         var seriesMap = {};
@@ -904,6 +960,7 @@
     async function initLibrary() {
         loadUserData();
         updateFontSizeDisplay();
+        applyReaderTheme();
         var cached = safeGet(CACHE_KEY);
         
         if (cached) {
@@ -1411,7 +1468,7 @@
         throw new Error("No se pudo descargar el contenido EPUB");
     }
 
-    // GESTIÓN DE LECTURA ROBUSTA E INMEDIATA EN IPAD
+    // GESTIÓN DE LECTURA ROBUSTA CON MODO OSCURO Y TAMAÑO PERSONALIZADO
     window.openReader = async function(folderId) {
         var book = globalBooks.find(function(b) { return b.folderId === folderId; });
         if (!book) return;
@@ -1427,7 +1484,9 @@
         loadingEl.style.display = 'block';
         loadingEl.innerHTML = "Abriendo libro digital en iPad...";
         epubViewer.style.display = 'none';
+        
         updateFontSizeDisplay();
+        applyReaderTheme();
 
         if (!book.loadedDetails) {
             await fetchBookDeepDetails(book);
@@ -1470,11 +1529,36 @@
                 flow: "paginated"
             });
 
-            // Aplica el tamaño de fuente elegido
-            epubRendition.themes.fontSize(currentFontSize + "%");
+            // REGISTRO DE TEMAS (OSCURO Y CLARO)
+            epubRendition.themes.register("dark", {
+                "body": { "background": "#121212 !important", "color": "#e2e8f0 !important" },
+                "p": { "color": "#e2e8f0 !important" },
+                "h1": { "color": "#ffffff !important" },
+                "h2": { "color": "#ffffff !important" },
+                "h3": { "color": "#ffffff !important" },
+                "h4": { "color": "#ffffff !important" },
+                "span": { "color": "#e2e8f0 !important" },
+                "a": { "color": "#38bdf8 !important" },
+                "div": { "color": "#e2e8f0 !important" }
+            });
+
+            epubRendition.themes.register("light", {
+                "body": { "background": "#ffffff !important", "color": "#121212 !important" },
+                "p": { "color": "#121212 !important" },
+                "h1": { "color": "#000000 !important" },
+                "h2": { "color": "#000000 !important" },
+                "h3": { "color": "#000000 !important" },
+                "h4": { "color": "#000000 !important" },
+                "span": { "color": "#121212 !important" },
+                "a": { "color": "#0284c7 !important" },
+                "div": { "color": "#121212 !important" }
+            });
+
+            applyReaderTheme();
 
             await epubRendition.display();
 
+            // SWIPE TÁCTIL EN IPAD
             epubRendition.on("rendered", function(section, iframeView) {
                 if (iframeView && iframeView.document) {
                     var doc = iframeView.document;
@@ -1525,6 +1609,7 @@
             if (e.key === 'ArrowLeft') prevEpubPage();
             if (e.key === '+' || e.key === '=') changeFontSize(15);
             if (e.key === '-' || e.key === '_') changeFontSize(-15);
+            if (e.key === 't' || e.key === 'T') toggleReaderTheme();
             if (e.key === 'Escape') closeReader();
         }
     });
