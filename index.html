@@ -249,6 +249,19 @@
         .badge-mobi { background-color: #0284c7; }
         .badge-cbr { background-color: #9333ea; }
 
+        .pages-badge {
+            background-color: #f8fafc;
+            color: #475569;
+            border: 1px solid #cbd5e1;
+            padding: 2px 7px;
+            border-radius: 6px;
+            font-size: 10.5px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+        }
+
         .series-badge {
             background-color: #0284c7;
             color: #ffffff;
@@ -355,8 +368,9 @@
             box-sizing: border-box;
             color: white;
         }
-        .mosaic-title { font-size: 12px; font-weight: bold; line-height: 1.2; margin-bottom: 4px; }
+        .mosaic-title { font-size: 12px; font-weight: bold; line-height: 1.2; margin-bottom: 2px; }
         .mosaic-author { font-size: 10px; color: var(--accent-gold); }
+        .mosaic-pages { font-size: 10px; color: #94a3b8; margin-top: 2px; }
 
         .pagination-container {
             grid-column: 1 / -1;
@@ -427,7 +441,7 @@
         .reader-header-actions { display: flex; gap: 8px; align-items: center; }
         .close-btn { background: #dc2626; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-weight: bold; cursor: pointer; -webkit-appearance: none; font-size: 13px; }
 
-        /* VISOR FIJO COMPATIBLE CON WEBKIT / SAFARI */
+        /* CONTENEDOR VISOR OPTIMIZADO PARA WEBKIT */
         .reader-body { 
             flex: 1; 
             position: relative; 
@@ -594,7 +608,7 @@
         </div>
         <div class="reader-body">
             <div id="epub-viewer"></div>
-            <div id="reader-loading" style="color:#0f172a; font-size:15px; font-weight:bold; text-align:center; padding:30px; position:absolute; top:40%; width:100%; box-sizing:border-box;">Cargando e-book digital en iPad...</div>
+            <div id="reader-loading" style="color:#0f172a; font-size:15px; font-weight:bold; text-align:center; padding:30px; position:absolute; top:35%; width:100%; box-sizing:border-box;">Cargando libro digital...</div>
         </div>
         <div class="reader-footer">
             <button class="action-btn" id="epub-prev" onclick="prevEpubPage()">← Anterior</button>
@@ -620,7 +634,7 @@
 
 <script>
     // ==========================================
-    // CAPA DE ALMACENAMIENTO SEGURO (SAFE STORAGE)
+    // CAPA DE ALMACENAMIENTO SEGURO
     // ==========================================
     var memoryStore = {};
 
@@ -660,8 +674,8 @@
         'familiar': 'lectura2026'   
     };
 
-    var AUTH_SESSION_KEY = 'faraon138_logged_in_v13';
-    var AUTH_CURRENT_USER = 'faraon138_current_user_v13';
+    var AUTH_SESSION_KEY = 'faraon138_logged_in_v15';
+    var AUTH_CURRENT_USER = 'faraon138_current_user_v15';
 
     function checkAuth() {
         if (safeGet(AUTH_SESSION_KEY, true) === 'true') {
@@ -714,8 +728,8 @@
     // ==========================================
     var API_KEY = 'AIzaSyABYJpop2BBwvK0cPpdXv-Mge3Wc_SanwQ'; 
     var FOLDER_ID = '1DXoxedW-epDoOGaHFHyCEno2G7OdCGmh';
-    var CACHE_KEY = 'faraon138_library_cache_v13';
-    var USER_DATA_KEY = 'faraon138_user_preferences_v13';
+    var CACHE_KEY = 'faraon138_library_cache_v15';
+    var USER_DATA_KEY = 'faraon138_user_preferences_v15';
 
     var globalBooks = [];       
     var userData = { favorites: {}, status: {} }; 
@@ -867,6 +881,7 @@
                                 loadedDetails: false,
                                 series: '',
                                 tags: [],
+                                pages: '',
                                 formats: ['EPUB'] 
                             });
                         });
@@ -1014,6 +1029,10 @@
                     return '<span class="format-badge ' + cls + '">' + fmt + '</span>';
                 }).join('');
 
+                var pagesHtml = book.pages 
+                    ? '<span class="pages-badge" id="pages-zone-' + book.folderId + '">📄 ' + book.pages + ' págs</span>' 
+                    : '<span class="pages-badge" id="pages-zone-' + book.folderId + '" style="display:none;"></span>';
+
                 var seriesHtml = book.series 
                     ? '<span class="series-badge" onclick="filterBySeries(\'' + book.series.replace(/'/g, "\\'") + '\')">📚 ' + book.series + '</span>' 
                     : '';
@@ -1033,6 +1052,7 @@
                             '<p class="book-author" id="author-' + book.folderId + '" onclick="filterByAuthor(\'' + book.author.replace(/'/g, "\\'") + '\')">' + book.author + '</p>' +
                             '<div class="book-meta">' +
                                 '<span id="formats-zone-' + book.folderId + '">' + badgesHtml + '</span>' +
+                                pagesHtml +
                                 '<span id="series-zone-' + book.folderId + '">' + seriesHtml + '</span>' +
                                 '<span id="tags-zone-' + book.folderId + '">' + tagsHtml + '</span>' +
                             '</div>' +
@@ -1063,11 +1083,14 @@
                     ? '<img class="book-cover" src="https://drive.google.com/thumbnail?id=' + book.coverId + '&sz=w500" alt="Portada" loading="lazy">'
                     : createPlaceholderCoverHTML(book.title, book.author);
 
+                var pagesMosaicHtml = book.pages ? '<div class="mosaic-pages" id="mosaic-pages-' + book.folderId + '">📄 ' + book.pages + ' págs</div>' : '<div class="mosaic-pages" id="mosaic-pages-' + book.folderId + '"></div>';
+
                 card.innerHTML = 
                     '<div class="cover-container" id="cover-zone-' + book.folderId + '">' + coverHTML + '</div>' +
                     '<div class="mosaic-overlay">' +
                         '<div class="mosaic-title" id="title-' + book.folderId + '">' + book.title + '</div>' +
                         '<div class="mosaic-author" id="author-' + book.folderId + '">' + book.author + '</div>' +
+                        pagesMosaicHtml +
                     '</div>';
                 libraryContainer.appendChild(card);
             }
@@ -1083,7 +1106,7 @@
 
     async function fetchBookDeepDetails(book) {
         try {
-            var filesUrl = 'https://www.googleapis.com/drive/v3/files?q=\'' + book.folderId + '\'+in+parents+and+explicitlyTrashed=false&key=' + API_KEY + '&fields=files(id,name,webViewLink)&pageSize=100';
+            var filesUrl = 'https://www.googleapis.com/drive/v3/files?q=\'' + book.folderId + '\'+in+parents+and+explicitlyTrashed=false&key=' + API_KEY + '&fields=files(id,name,size,webViewLink)&pageSize=100';
             var filesResponse = await fetch(filesUrl);
             var filesData = await filesResponse.json();
 
@@ -1092,6 +1115,7 @@
             var fileToReadId = '';
             var bookLink = book.webViewLink; 
             var detectedFormats = [];
+            var mainFileSize = 0;
 
             if (filesData.files) {
                 filesData.files.forEach(function(file) {
@@ -1099,10 +1123,27 @@
                     if (nameLower === 'metadata.opf') metadataId = file.id;
                     else if (nameLower.includes('cover.')) coverId = file.id;
                     
-                    if (nameLower.endsWith('.epub')) { detectedFormats.push('EPUB'); fileToReadId = file.id; bookLink = file.webViewLink; }
-                    else if (nameLower.endsWith('.pdf')) { detectedFormats.push('PDF'); bookLink = file.webViewLink; }
-                    else if (nameLower.endsWith('.mobi')) { detectedFormats.push('MOBI'); if(!fileToReadId) fileToReadId = file.id; bookLink = file.webViewLink; }
-                    else if (nameLower.endsWith('.cbr') || nameLower.endsWith('.cbz')) { detectedFormats.push('CBR/CBZ'); bookLink = file.webViewLink; }
+                    if (nameLower.endsWith('.epub')) { 
+                        detectedFormats.push('EPUB'); 
+                        fileToReadId = file.id; 
+                        bookLink = file.webViewLink; 
+                        if (file.size) mainFileSize = parseInt(file.size);
+                    }
+                    else if (nameLower.endsWith('.pdf')) { 
+                        detectedFormats.push('PDF'); 
+                        fileToReadId = file.id; 
+                        bookLink = file.webViewLink; 
+                        if (file.size && !mainFileSize) mainFileSize = parseInt(file.size);
+                    }
+                    else if (nameLower.endsWith('.mobi')) { 
+                        detectedFormats.push('MOBI'); 
+                        if(!fileToReadId) fileToReadId = file.id; 
+                        bookLink = file.webViewLink; 
+                    }
+                    else if (nameLower.endsWith('.cbr') || nameLower.endsWith('.cbz')) { 
+                        detectedFormats.push('CBR/CBZ'); 
+                        bookLink = file.webViewLink; 
+                    }
                 });
             }
 
@@ -1171,17 +1212,59 @@
 
                     var metaTags = xmlDoc.getElementsByTagName("meta");
                     var foundSeries = "";
+                    var foundPages = "";
+
                     for (var m = 0; m < metaTags.length; m++) {
-                        if (metaTags[m].getAttribute("name") === "calibre:series") {
-                            foundSeries = metaTags[m].getAttribute("content") || "";
-                            break;
+                        var nameAttr = metaTags[m].getAttribute("name") || "";
+                        var propAttr = metaTags[m].getAttribute("property") || "";
+                        var contentAttr = metaTags[m].getAttribute("content") || "";
+
+                        if (nameAttr === "calibre:series") {
+                            foundSeries = contentAttr;
+                        }
+
+                        if (nameAttr === "calibre:pages" || nameAttr === "calibre:exact_page_count" || propAttr === "schema:numberOfPages") {
+                            foundPages = contentAttr || metaTags[m].textContent;
+                        } else if (nameAttr.indexOf("pages") !== -1 || nameAttr.indexOf("paginas") !== -1) {
+                            try {
+                                var parsed = JSON.parse(contentAttr);
+                                if (parsed && parsed['#value#']) foundPages = parsed['#value#'];
+                                else if (contentAttr && !isNaN(parseInt(contentAttr))) foundPages = parseInt(contentAttr);
+                            } catch(e) {
+                                if (contentAttr && !isNaN(parseInt(contentAttr))) foundPages = parseInt(contentAttr);
+                            }
                         }
                     }
+
                     if (foundSeries) {
                         book.series = foundSeries.trim();
                         var sEl = document.getElementById('series-zone-' + book.folderId);
                         if (sEl) {
                             sEl.innerHTML = '<span class="series-badge" onclick="filterBySeries(\'' + book.series.replace(/'/g, "\\'") + '\')">📚 ' + book.series + '</span>';
+                        }
+                    }
+
+                    if (!foundPages && mainFileSize > 0) {
+                        var sizeKB = mainFileSize / 1024;
+                        if (book.formats && book.formats.indexOf('PDF') !== -1) {
+                            var estPdf = Math.round(sizeKB / 75);
+                            foundPages = Math.max(25, Math.min(estPdf, 1500)) + " (est.)";
+                        } else {
+                            var estEpub = Math.round(sizeKB / 2.2);
+                            foundPages = Math.max(45, Math.min(estEpub, 1100)) + " (est.)";
+                        }
+                    }
+
+                    if (foundPages) {
+                        book.pages = foundPages.toString().trim();
+                        var pZone = document.getElementById('pages-zone-' + book.folderId);
+                        if (pZone) {
+                            pZone.innerHTML = '📄 ' + book.pages + ' págs';
+                            pZone.style.display = 'inline-flex';
+                        }
+                        var pMosaic = document.getElementById('mosaic-pages-' + book.folderId);
+                        if (pMosaic) {
+                            pMosaic.innerText = '📄 ' + book.pages + ' págs';
                         }
                     }
 
@@ -1210,7 +1293,6 @@
         } catch (err) {}
     }
 
-    // DESCARGADOR RESILIENTE PARA SAFARI / IPAD
     async function getEpubBinaryBuffer(fileId) {
         var directUrl = 'https://www.googleapis.com/drive/v3/files/' + fileId + '?alt=media&key=' + API_KEY;
         
@@ -1243,15 +1325,10 @@
         throw new Error("No se pudo descargar el contenido EPUB");
     }
 
-    // LECTOR EPUB COMPATIBLE CON IPAD / WEBKIT
+    // GESTIÓN ROBUSTA DE LECTURA (100% COMPATIBLE CON IPAD)
     async function openReader(folderId) {
         var book = globalBooks.find(function(b) { return b.folderId === folderId; });
         if (!book) return;
-
-        if (book.formats && book.formats.some(function(f) { return f.toUpperCase().includes('PDF'); })) {
-            window.open(book.bookLink || book.webViewLink, '_blank');
-            return;
-        }
 
         var modal = document.getElementById('readerModal');
         var titleEl = document.getElementById('reader-book-title');
@@ -1259,19 +1336,39 @@
         var epubViewer = document.getElementById('epub-viewer');
         var appleBtn = document.getElementById('btn-apple-books');
 
+        // 1. Si los detalles aún no están cargados, descargarlos antes de proceder
+        if (!book.loadedDetails) {
+            modal.classList.add('active');
+            titleEl.innerText = 'Cargando: ' + book.title;
+            loadingEl.style.display = 'block';
+            loadingEl.innerHTML = "Obteniendo datos del libro desde Google Drive...";
+            epubViewer.style.display = 'none';
+            await fetchBookDeepDetails(book);
+        }
+
+        // 2. Si es PDF -> Abrir directamente en Google Drive en nueva pestaña
+        if (book.formats && book.formats.some(function(f) { return f.toUpperCase().includes('PDF'); })) {
+            closeReader();
+            window.open(book.bookLink || book.webViewLink, '_blank');
+            return;
+        }
+
+        // 3. Preparar enlaces de lectura directa
         titleEl.innerText = 'Leyendo: ' + book.title;
         modal.classList.add('active');
         loadingEl.style.display = 'block';
-        loadingEl.innerHTML = "Cargando e-book digital en iPad...";
+        loadingEl.innerHTML = "Preparando libro digital para iPad...";
         epubViewer.style.display = 'none';
 
-        var downloadLink = 'https://drive.google.com/uc?export=download&id=' + (book.fileToReadId || book.folderId);
+        var targetFileId = book.fileToReadId || book.folderId;
+        var directDownloadUrl = 'https://drive.google.com/uc?export=download&id=' + targetFileId;
+        
         if (appleBtn) {
-            appleBtn.setAttribute('href', downloadLink);
+            appleBtn.setAttribute('href', directDownloadUrl);
         }
 
         if (!book.fileToReadId) {
-            loadingEl.innerHTML = 'No se detectó un archivo EPUB directo.<br><br><a href="' + (book.bookLink || book.webViewLink) + '" target="_blank" class="read-btn">📂 Abrir en Google Drive</a>';
+            loadingEl.innerHTML = 'Este libro no posee un archivo EPUB directo.<br><br><a href="' + (book.bookLink || book.webViewLink) + '" target="_blank" class="read-btn">📂 Abrir en Google Drive</a>';
             return;
         }
 
@@ -1296,7 +1393,7 @@
 
             await epubRendition.display();
 
-            // GESTO TÁCTIL (SWIPE) PARA IPAD
+            // Soporte para gestos táctiles (swipe)
             epubRendition.on("rendered", function(section, iframeView) {
                 if (iframeView && iframeView.document) {
                     var doc = iframeView.document;
@@ -1313,11 +1410,11 @@
             });
 
         } catch (e) {
-            console.error("Error abriendo EPUB:", e);
+            console.error("Visor web no compatible en esta sesión:", e);
             loadingEl.style.display = 'block';
-            loadingEl.innerHTML = 'No se pudo desplegar el visor dentro del navegador.<br><br>' +
-                '<a href="' + downloadLink + '" target="_blank" class="read-btn" style="background:#0284c7; padding:10px 18px; font-size:14px;">📲 Abrir en App Libros de Apple</a><br><br>' +
-                '<a href="' + (book.bookLink || book.webViewLink) + '" target="_blank" style="color:#94a3b8; font-size:12px;">Abrir carpeta en Google Drive</a>';
+            loadingEl.innerHTML = 'Toca el botón para leer en tu aplicación favorita de iPad:<br><br>' +
+                '<a href="' + directDownloadUrl + '" target="_blank" class="read-btn" style="background:#0284c7; padding:12px 20px; font-size:15px; text-decoration:none;">📲 Abrir en App Libros de Apple</a><br><br>' +
+                '<a href="' + (book.bookLink || book.webViewLink) + '" target="_blank" style="color:#94a3b8; font-size:12px;">📂 Abrir archivo en Google Drive</a>';
         }
     }
 
@@ -1372,11 +1469,13 @@
             return '<span class="format-badge ' + cls + '">' + fmt + '</span>';
         }).join('');
 
+        var pagesInfo = randomBook.pages ? '<span class="pages-badge">📄 ' + randomBook.pages + ' págs</span>' : '';
+
         body.innerHTML = 
             coverHTML +
             '<div style="font-size:17px; font-weight:bold; color:white; margin-bottom:4px; line-height:1.3;">' + randomBook.title + '</div>' +
             '<div style="color:var(--accent-gold); font-size:14px; margin-bottom:8px;">' + randomBook.author + '</div>' +
-            '<div style="margin-bottom:15px;">' + badgesHtml + '</div>' +
+            '<div style="margin-bottom:15px; display:flex; gap:6px; justify-content:center; align-items:center;">' + badgesHtml + pagesInfo + '</div>' +
             '<div style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">' +
                 '<button class="read-btn" onclick="closeRandomModal(); openReader(\'' + randomBook.folderId + '\');">📖 Leer libro</button>' +
                 '<a href="' + (randomBook.bookLink || randomBook.webViewLink) + '" class="drive-icon-btn" target="_blank" style="padding:7px 14px; border-radius:6px;">📂 Abrir en Drive</a>' +
@@ -1520,6 +1619,7 @@
 
     function scrollToTop() { window.scrollTo({top: 0, behavior: 'smooth'}); }
 
+    // INICIAR CON CONTROL DE ACCESO
     checkAuth();
 </script>
 
