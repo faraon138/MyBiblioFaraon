@@ -5,8 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Biblioteca de Faraon138</title>
     
-    <!-- Librerías CDN para Visor EPUB -->
+    <!-- Librerías CDN para Visor EPUB y Descompresores CBR/CBZ -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/electron-unrar-js@1.0.1/dist/unrar.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
 
     <style>
@@ -256,6 +257,7 @@
         .badge-pdf { background-color: #dc2626; }
         .badge-mobi { background-color: #0284c7; }
         .badge-cbr { background-color: #9333ea; }
+        .badge-cbz { background-color: #9333ea; }
 
         .pages-badge {
             background-color: #f8fafc;
@@ -462,7 +464,6 @@
         .reader-title { font-size: 14px; font-weight: bold; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 140px; }
         .reader-header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: nowrap; flex-shrink: 0; }
         
-        /* BOTÓN DE TEMA OSCURO/CLARO */
         .theme-toggle-btn {
             background: #334155;
             color: #ffffff;
@@ -478,11 +479,8 @@
             touch-action: manipulation;
             -webkit-appearance: none;
         }
-        .theme-toggle-btn:active {
-            background: var(--accent-blue);
-        }
+        .theme-toggle-btn:active { background: var(--accent-blue); }
 
-        /* CONTROLES DE TAMAÑO DE FUENTE */
         .font-controls {
             display: inline-flex;
             align-items: center;
@@ -503,9 +501,7 @@
             border-radius: 12px !important;
             touch-action: manipulation;
         }
-        .font-btn:active {
-            background: var(--accent-blue) !important;
-        }
+        .font-btn:active { background: var(--accent-blue) !important; }
         .font-size-label {
             font-size: 11px;
             color: var(--accent-gold);
@@ -527,6 +523,8 @@
             overflow: hidden; 
             transition: background 0.3s ease;
         }
+        
+        /* VISOR EPUB */
         #epub-viewer { 
             position: absolute;
             top: 0;
@@ -541,6 +539,33 @@
             width: 100% !important;
             height: 100% !important;
             border: none;
+        }
+
+        /* VISOR CBR / CBZ CÓMICS */
+        #comic-viewer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+            background: #000000;
+            display: none;
+            overflow: auto;
+            -webkit-overflow-scrolling: touch;
+            text-align: center;
+            user-select: none;
+            cursor: pointer;
+        }
+        #comic-viewer img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            margin: auto;
+            display: block;
+            box-shadow: 0 0 25px rgba(0,0,0,0.8);
+            pointer-events: none;
         }
 
         .reader-footer {
@@ -672,9 +697,9 @@
         <div class="filter-container">
             <button class="filter-btn active" id="btn-fmt-all" onclick="setFormatFilter('ALL')">Todos</button>
             <button class="filter-btn" id="btn-fmt-epub" onclick="setFormatFilter('EPUB')">EPUB</button>
+            <button class="filter-btn" id="btn-fmt-cbr" onclick="setFormatFilter('CBR/CBZ')">CBR/CBZ</button>
             <button class="filter-btn" id="btn-fmt-pdf" onclick="setFormatFilter('PDF')">PDF</button>
             <button class="filter-btn" id="btn-fmt-mobi" onclick="setFormatFilter('MOBI')">MOBI</button>
-            <button class="filter-btn" id="btn-fmt-cbr" onclick="setFormatFilter('CBR/CBZ')">CBR/CBZ</button>
             <span style="color:#64748b;">|</span>
             <button class="filter-btn" id="filter-favs" onclick="setStatusFilter('FAV')">★ Favoritos</button>
             <button class="filter-btn" id="filter-reading" onclick="setStatusFilter('leyendo')">📖 Leyendo</button>
@@ -687,29 +712,32 @@
     <div id="pagination" class="pagination-container"></div>
 </div>
 
-<!-- MODAL VISOR EPUB ROBUSTO CON INYECCIÓN DIRECTA DE CSS -->
+<!-- MODAL VISOR UNIFICADO: EPUB + CBR/CBZ CÓMICS -->
 <div id="readerModal">
     <div class="reader-modal-content">
         <div class="reader-header">
-            <div class="reader-title" id="reader-book-title">Cargando libro...</div>
+            <div class="reader-title" id="reader-book-title">Cargando...</div>
             <div class="reader-header-actions">
                 <button type="button" class="theme-toggle-btn" id="btn-reader-theme" onclick="toggleReaderTheme()">🌙 Modo Noche</button>
-                <div class="font-controls">
+                <div class="font-controls" id="reader-font-box">
                     <button type="button" class="font-btn" onclick="changeFontSize(-15)" title="Reducir letra">A-</button>
                     <span id="font-size-label" class="font-size-label">115%</span>
                     <button type="button" class="font-btn" onclick="changeFontSize(15)" title="Agrandar letra">A+</button>
                 </div>
-                <a id="btn-apple-books" href="#" target="_blank" class="action-btn" style="background:#0284c7; text-decoration:none; color:white;">📲 Abrir en Apple Books</a>
+                <a id="btn-apple-books" href="#" target="_blank" class="action-btn" style="background:#0284c7; text-decoration:none; color:white;">📲 Abrir archivo</a>
                 <button class="close-btn" onclick="closeReader()">✕ Cerrar</button>
             </div>
         </div>
         <div class="reader-body" id="reader-body-container">
             <div id="epub-viewer"></div>
-            <div id="reader-loading" style="color:#ffffff; font-size:15px; font-weight:bold; text-align:center; padding:30px; position:absolute; top:35%; width:100%; box-sizing:border-box;">Abriendo libro digital...</div>
+            <div id="comic-viewer">
+                <img id="comic-current-img" src="" alt="Página de Cómic">
+            </div>
+            <div id="reader-loading" style="color:#ffffff; font-size:15px; font-weight:bold; text-align:center; padding:30px; position:absolute; top:35%; width:100%; box-sizing:border-box;">Abriendo contenido digital...</div>
         </div>
         <div class="reader-footer">
             <button class="action-btn" id="epub-prev" onclick="prevEpubPage()">← Anterior</button>
-            <span style="font-size:11px; color:#94a3b8;">Desliza con el dedo o pulsa las flechas</span>
+            <span id="reader-page-info" style="font-size:12px; color:#94a3b8; font-weight:600;">Desliza con el dedo o pulsa las flechas</span>
             <button class="action-btn" id="epub-next" onclick="nextEpubPage()">Siguiente →</button>
         </div>
     </div>
@@ -766,13 +794,18 @@
         'familiar': 'lectura2026'   
     };
 
-    var AUTH_SESSION_KEY = 'faraon138_logged_in_v19';
-    var AUTH_CURRENT_USER = 'faraon138_current_user_v19';
+    var AUTH_SESSION_KEY = 'faraon138_logged_in_v20';
+    var AUTH_CURRENT_USER = 'faraon138_current_user_v20';
     var FONT_SIZE_KEY = 'faraon138_reader_font_size';
     var THEME_KEY = 'faraon138_reader_theme';
 
     var currentFontSize = parseInt(safeGet(FONT_SIZE_KEY) || '115');
     var currentReaderTheme = safeGet(THEME_KEY) || 'light';
+
+    // ESTADO DEL VISOR
+    var currentReaderMode = 'epub'; // 'epub' o 'comic'
+    var comicPageUrls = [];
+    var currentComicPageIndex = 0;
 
     window.checkAuth = function() {
         if (safeGet(AUTH_SESSION_KEY, true) === 'true') {
@@ -820,8 +853,8 @@
     // GOOGLE DRIVE CONFIG
     var API_KEY = 'AIzaSyABYJpop2BBwvK0cPpdXv-Mge3Wc_SanwQ'; 
     var FOLDER_ID = '1DXoxedW-epDoOGaHFHyCEno2G7OdCGmh';
-    var CACHE_KEY = 'faraon138_library_cache_v19';
-    var USER_DATA_KEY = 'faraon138_user_preferences_v19';
+    var CACHE_KEY = 'faraon138_library_cache_v20';
+    var USER_DATA_KEY = 'faraon138_user_preferences_v20';
 
     var globalBooks = [];       
     var userData = { favorites: {}, status: {} }; 
@@ -872,7 +905,7 @@
         safeSet(USER_DATA_KEY, JSON.stringify(userData));
     }
 
-    // CONTROL DE TAMAÑO DE FUENTE
+    // CONTROL DE TAMAÑO DE FUENTE (EPUB)
     window.changeFontSize = function(delta) {
         currentFontSize = Math.max(70, Math.min(250, currentFontSize + delta));
         safeSet(FONT_SIZE_KEY, currentFontSize.toString());
@@ -885,7 +918,7 @@
         if (label) label.innerText = currentFontSize + "%";
     }
 
-    // INYECCIÓN ROBUSTA DE MODO OSCURO DIRECTO EN LOS IFRAMES DE EPUB.JS
+    // APLICAR TEMA OSCURO / CLARO
     function applyReaderTheme() {
         var btn = document.getElementById('btn-reader-theme');
         var bodyContainer = document.getElementById('reader-body-container');
@@ -899,7 +932,6 @@
             bodyContainer.style.backgroundColor = isDark ? '#121212' : '#ffffff';
         }
 
-        // 1. Inyecta hoja de estilo destructiva con !important dentro de cada iframe del EPUB
         var iframes = document.querySelectorAll('#epub-viewer iframe');
         for (var i = 0; i < iframes.length; i++) {
             try {
@@ -936,7 +968,6 @@
             } catch (e) {}
         }
 
-        // 2. Notifica a epub.js a nivel de themes
         if (epubRendition && epubRendition.themes) {
             try {
                 if (isDark) {
@@ -996,6 +1027,7 @@
     async function initLibrary() {
         loadUserData();
         updateFontSizeDisplay();
+        applyReaderTheme();
         var cached = safeGet(CACHE_KEY);
         
         if (cached) {
@@ -1102,7 +1134,7 @@
     function updateStats() {
         document.getElementById('stat-total').innerText = globalBooks.length + ' volúmenes';
         
-        var counts = { EPUB: 0, PDF: 0, MOBI: 0, Otros: 0 };
+        var counts = { EPUB: 0, CBR: 0, CBZ: 0, PDF: 0, MOBI: 0, Otros: 0 };
         var authorMap = {};
 
         globalBooks.forEach(function(b) {
@@ -1112,7 +1144,8 @@
             authorMap[b.author] = (authorMap[b.author] || 0) + 1;
         });
 
-        document.getElementById('stat-formats').innerText = counts.EPUB + ' EPUB · ' + counts.PDF + ' PDF · ' + counts.MOBI + ' MOBI';
+        var comicsCount = counts.CBR + counts.CBZ;
+        document.getElementById('stat-formats').innerText = counts.EPUB + ' EPUB · ' + comicsCount + ' Cómics (CBR/CBZ) · ' + counts.PDF + ' PDF';
 
         var topAuthors = Object.entries(authorMap)
             .sort(function(a,b) { return b[1] - a[1]; })
@@ -1146,7 +1179,11 @@
 
         var filtered = sorted.filter(function(book) {
             if (currentFormatFilter !== 'ALL' && book.loadedDetails) {
-                if (!book.formats.includes(currentFormatFilter)) return false;
+                if (currentFormatFilter === 'CBR/CBZ') {
+                    if (!book.formats.includes('CBR') && !book.formats.includes('CBZ') && !book.formats.includes('CBR/CBZ')) return false;
+                } else {
+                    if (!book.formats.includes(currentFormatFilter)) return false;
+                }
             }
             if (currentStatusFilter === 'FAV' && !userData.favorites[book.folderId]) return false;
             if (['leyendo', 'leido', 'pendiente'].includes(currentStatusFilter)) {
@@ -1203,7 +1240,11 @@
                     : createPlaceholderCoverHTML(book.title, book.author);
 
                 var badgesHtml = (book.formats || ['EPUB']).map(function(fmt) {
-                    var cls = fmt.toLowerCase().includes('pdf') ? 'badge-pdf' : fmt.toLowerCase().includes('mobi') ? 'badge-mobi' : fmt.toLowerCase().includes('cbr') ? 'badge-cbr' : 'badge-epub';
+                    var cls = 'badge-epub';
+                    if (fmt.toLowerCase().includes('pdf')) cls = 'badge-pdf';
+                    else if (fmt.toLowerCase().includes('mobi')) cls = 'badge-mobi';
+                    else if (fmt.toLowerCase().includes('cbr')) cls = 'badge-cbr';
+                    else if (fmt.toLowerCase().includes('cbz')) cls = 'badge-cbz';
                     return '<span class="format-badge ' + cls + '">' + fmt + '</span>';
                 }).join('');
 
@@ -1307,19 +1348,27 @@
                         bookLink = file.webViewLink; 
                         if (file.size) mainFileSize = parseInt(file.size);
                     }
+                    else if (nameLower.endsWith('.cbz')) { 
+                        detectedFormats.push('CBZ'); 
+                        if(!fileToReadId) fileToReadId = file.id; 
+                        bookLink = file.webViewLink; 
+                        if (file.size && !mainFileSize) mainFileSize = parseInt(file.size);
+                    }
+                    else if (nameLower.endsWith('.cbr')) { 
+                        detectedFormats.push('CBR'); 
+                        if(!fileToReadId) fileToReadId = file.id; 
+                        bookLink = file.webViewLink; 
+                        if (file.size && !mainFileSize) mainFileSize = parseInt(file.size);
+                    }
                     else if (nameLower.endsWith('.pdf')) { 
                         detectedFormats.push('PDF'); 
-                        fileToReadId = file.id; 
+                        if(!fileToReadId) fileToReadId = file.id; 
                         bookLink = file.webViewLink; 
                         if (file.size && !mainFileSize) mainFileSize = parseInt(file.size);
                     }
                     else if (nameLower.endsWith('.mobi')) { 
                         detectedFormats.push('MOBI'); 
                         if(!fileToReadId) fileToReadId = file.id; 
-                        bookLink = file.webViewLink; 
-                    }
-                    else if (nameLower.endsWith('.cbr') || nameLower.endsWith('.cbz')) { 
-                        detectedFormats.push('CBR/CBZ'); 
                         bookLink = file.webViewLink; 
                     }
                 });
@@ -1338,7 +1387,11 @@
             var formatsZone = document.getElementById('formats-zone-' + book.folderId);
             if (formatsZone) {
                 var badgesHtml = book.formats.map(function(fmt) {
-                    var cls = fmt.toLowerCase().includes('pdf') ? 'badge-pdf' : fmt.toLowerCase().includes('mobi') ? 'badge-mobi' : fmt.toLowerCase().includes('cbr') ? 'badge-cbr' : 'badge-epub';
+                    var cls = 'badge-epub';
+                    if (fmt.toLowerCase().includes('pdf')) cls = 'badge-pdf';
+                    else if (fmt.toLowerCase().includes('mobi')) cls = 'badge-mobi';
+                    else if (fmt.toLowerCase().includes('cbr')) cls = 'badge-cbr';
+                    else if (fmt.toLowerCase().includes('cbz')) cls = 'badge-cbz';
                     return '<span class="format-badge ' + cls + '">' + fmt + '</span>';
                 }).join('');
                 formatsZone.innerHTML = badgesHtml;
@@ -1424,7 +1477,10 @@
 
                     if (!foundPages && mainFileSize > 0) {
                         var sizeKB = mainFileSize / 1024;
-                        if (book.formats && book.formats.indexOf('PDF') !== -1) {
+                        if (book.formats && (book.formats.indexOf('CBR') !== -1 || book.formats.indexOf('CBZ') !== -1)) {
+                            var estComic = Math.round(sizeKB / 700);
+                            foundPages = Math.max(15, Math.min(estComic, 350)) + " (est.)";
+                        } else if (book.formats && book.formats.indexOf('PDF') !== -1) {
                             var estPdf = Math.round(sizeKB / 75);
                             foundPages = Math.max(25, Math.min(estPdf, 1500)) + " (est.)";
                         } else {
@@ -1500,10 +1556,99 @@
             }
         } catch(e) {}
 
-        throw new Error("No se pudo descargar el contenido EPUB");
+        throw new Error("No se pudo descargar el contenido del archivo.");
     }
 
-    // GESTIÓN DE LECTURA ROBUSTA CON MODO OSCURO FORZADO
+    // DESCOMPRESOR CBZ Y CBR
+    async function loadComicImages(arrayBuffer) {
+        var validExts = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp'];
+
+        // 1. Intenta con JSZip (Funciona con todos los .cbz y la mayoría de los .cbr)
+        try {
+            var zip = await JSZip.loadAsync(arrayBuffer);
+            var imageEntries = [];
+            zip.forEach(function(relativePath, zipEntry) {
+                if (!zipEntry.dir) {
+                    var lower = relativePath.toLowerCase();
+                    if (validExts.some(function(ext) { return lower.endsWith(ext); }) && !lower.includes('__macosx') && !lower.includes('.ds_store')) {
+                        imageEntries.push(zipEntry);
+                    }
+                }
+            });
+
+            if (imageEntries.length > 0) {
+                imageEntries.sort(function(a, b) {
+                    return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' });
+                });
+
+                var urls = [];
+                for (var i = 0; i < imageEntries.length; i++) {
+                    var blob = await imageEntries[i].async('blob');
+                    urls.push(URL.createObjectURL(blob));
+                }
+                return urls;
+            }
+        } catch (e) {}
+
+        // 2. Intenta con descompresor RAR si es un .cbr nativo
+        if (typeof unrar !== 'undefined' && unrar.createExtractorFromData) {
+            try {
+                var extractor = unrar.createExtractorFromData(arrayBuffer);
+                var list = extractor.getFileList();
+                if (list && list[0] && list[0].state === "SUCCESS") {
+                    var fileHeaders = list[1].fileHeaders || [];
+                    var imgNames = [];
+                    for (var f = 0; f < fileHeaders.length; f++) {
+                        var fn = fileHeaders[f].name || '';
+                        var fnLower = fn.toLowerCase();
+                        if (validExts.some(function(ext) { return fnLower.endsWith(ext); }) && !fnLower.includes('__macosx')) {
+                            imgNames.push(fn);
+                        }
+                    }
+                    imgNames.sort(function(a, b) {
+                        return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+                    });
+
+                    if (imgNames.length > 0) {
+                        var extracted = extractor.extractFiles(imgNames);
+                        if (extracted && extracted[0] && extracted[0].state === "SUCCESS") {
+                            var files = extracted[1].files || [];
+                            var rUrls = [];
+                            for (var k = 0; k < files.length; k++) {
+                                if (files[k] && files[k].extract && files[k].extract[0] && files[k].extract[0].state === "SUCCESS") {
+                                    var bytes = files[k].extract[1];
+                                    var mime = "image/jpeg";
+                                    var lowerN = (files[k].fileHeader.name || '').toLowerCase();
+                                    if (lowerN.endsWith('.png')) mime = "image/png";
+                                    else if (lowerN.endsWith('.webp')) mime = "image/webp";
+                                    var rBlob = new Blob([bytes], { type: mime });
+                                    rUrls.push(URL.createObjectURL(rBlob));
+                                }
+                            }
+                            if (rUrls.length > 0) return rUrls;
+                        }
+                    }
+                }
+            } catch (err) {}
+        }
+
+        throw new Error("No se pudieron extraer las páginas del cómic.");
+    }
+
+    // MOSTRAR PÁGINA DE CÓMIC
+    function showComicPage(index) {
+        if (!comicPageUrls || comicPageUrls.length === 0) return;
+        var img = document.getElementById('comic-current-img');
+        var pageInfo = document.getElementById('reader-page-info');
+
+        if (img) img.src = comicPageUrls[index];
+        if (pageInfo) pageInfo.innerText = 'Página ' + (index + 1) + ' de ' + comicPageUrls.length;
+
+        var comicContainer = document.getElementById('comic-viewer');
+        if (comicContainer) comicContainer.scrollTop = 0;
+    }
+
+    // GESTIÓN DE LECTURA (EPUB, CBR, CBZ, PDF)
     window.openReader = async function(folderId) {
         var book = globalBooks.find(function(b) { return b.folderId === folderId; });
         if (!book) return;
@@ -1512,20 +1657,24 @@
         var titleEl = document.getElementById('reader-book-title');
         var loadingEl = document.getElementById('reader-loading');
         var epubViewer = document.getElementById('epub-viewer');
+        var comicViewer = document.getElementById('comic-viewer');
         var appleBtn = document.getElementById('btn-apple-books');
+        var fontBox = document.getElementById('reader-font-box');
+        var themeBtn = document.getElementById('btn-reader-theme');
+        var pageInfo = document.getElementById('reader-page-info');
 
         titleEl.innerText = book.title;
         modal.classList.add('active');
         loadingEl.style.display = 'block';
-        loadingEl.innerHTML = "Abriendo libro digital...";
+        loadingEl.innerHTML = "Abriendo contenido digital...";
         epubViewer.style.display = 'none';
-        
-        updateFontSizeDisplay();
+        comicViewer.style.display = 'none';
 
         if (!book.loadedDetails) {
             await fetchBookDeepDetails(book);
         }
 
+        // SI ES PDF
         if (book.formats && book.formats.some(function(f) { return f.toUpperCase().includes('PDF'); })) {
             loadingEl.innerHTML = 'Este libro está en formato <strong>PDF</strong>.<br><br>' +
                 '<a href="' + (book.bookLink || book.webViewLink) + '" target="_blank" class="read-btn" style="padding:12px 22px; font-size:15px; text-decoration:none; margin:0 auto; display:inline-flex;">📄 Abrir PDF en Google Drive</a>';
@@ -1534,18 +1683,67 @@
 
         var targetFileId = book.fileToReadId || book.folderId;
         var directDownloadUrl = 'https://drive.google.com/uc?export=download&id=' + targetFileId;
-        
-        if (appleBtn) {
-            appleBtn.setAttribute('href', directDownloadUrl);
-        }
+        if (appleBtn) appleBtn.setAttribute('href', directDownloadUrl);
 
         if (!book.fileToReadId) {
-            loadingEl.innerHTML = 'Este libro no posee archivo EPUB directo.<br><br><a href="' + (book.bookLink || book.webViewLink) + '" target="_blank" class="read-btn">📂 Abrir en Google Drive</a>';
+            loadingEl.innerHTML = 'Este libro no posee un archivo legible directo.<br><br><a href="' + (book.bookLink || book.webViewLink) + '" target="_blank" class="read-btn">📂 Abrir en Google Drive</a>';
             return;
         }
 
+        var isComic = book.formats && book.formats.some(function(f) { 
+            var u = f.toUpperCase(); 
+            return u.includes('CBR') || u.includes('CBZ'); 
+        });
+
         try {
             var arrayBuffer = await getEpubBinaryBuffer(book.fileToReadId);
+
+            // ==========================================
+            // MODO 1: LECTOR DE CÓMICS (CBR / CBZ)
+            // ==========================================
+            if (isComic) {
+                currentReaderMode = 'comic';
+                if (fontBox) fontBox.style.display = 'none';
+                if (themeBtn) themeBtn.style.display = 'none';
+
+                comicPageUrls = await loadComicImages(arrayBuffer);
+                currentComicPageIndex = 0;
+
+                loadingEl.style.display = 'none';
+                comicViewer.style.display = 'flex';
+                showComicPage(0);
+
+                // Configurar swipe y toques para el iPad en Cómics
+                var startX = 0;
+                comicViewer.ontouchstart = function(e) {
+                    if (e.changedTouches && e.changedTouches[0]) {
+                        startX = e.changedTouches[0].screenX;
+                    }
+                };
+                comicViewer.ontouchend = function(e) {
+                    if (e.changedTouches && e.changedTouches[0]) {
+                        var diffX = e.changedTouches[0].screenX - startX;
+                        if (diffX < -50) window.nextEpubPage();
+                        if (diffX > 50) window.prevEpubPage();
+                    }
+                };
+                comicViewer.onclick = function(e) {
+                    var rect = comicViewer.getBoundingClientRect();
+                    var clickX = e.clientX - rect.left;
+                    if (clickX < rect.width * 0.35) window.prevEpubPage();
+                    else if (clickX > rect.width * 0.65) window.nextEpubPage();
+                };
+
+                return;
+            }
+
+            // ==========================================
+            // MODO 2: LECTOR DE EPUB (LIBROS)
+            // ==========================================
+            currentReaderMode = 'epub';
+            if (fontBox) fontBox.style.display = 'inline-flex';
+            if (themeBtn) themeBtn.style.display = 'inline-flex';
+            if (pageInfo) pageInfo.innerText = 'Desliza con el dedo o pulsa las flechas';
 
             loadingEl.style.display = 'none';
             epubViewer.style.display = 'block';
@@ -1563,7 +1761,6 @@
                 flow: "paginated"
             });
 
-            // Registro en cada página renderizada
             epubRendition.on("rendered", function(section, iframeView) {
                 applyReaderTheme();
                 if (iframeView && iframeView.document) {
@@ -1584,23 +1781,37 @@
             applyReaderTheme();
 
         } catch (e) {
-            console.error("Visor web restringido:", e);
+            console.error("Error abriendo documento:", e);
             loadingEl.style.display = 'block';
-            loadingEl.innerHTML = 'Toca el botón para leer en la app de tu iPad:<br><br>' +
-                '<a href="' + directDownloadUrl + '" target="_blank" class="read-btn" style="background:#0284c7; padding:12px 22px; font-size:15px; text-decoration:none; display:inline-flex;">📲 Abrir en App Libros de Apple</a><br><br>' +
+            loadingEl.innerHTML = 'No se pudo desplegar el visor interno de este archivo.<br><br>' +
+                '<a href="' + directDownloadUrl + '" target="_blank" class="read-btn" style="background:#0284c7; padding:12px 22px; font-size:15px; text-decoration:none; display:inline-flex;">📲 Descargar y Abrir en App Externa</a><br><br>' +
                 '<a href="' + (book.bookLink || book.webViewLink) + '" target="_blank" style="color:#94a3b8; font-size:13px;">📂 Abrir en Google Drive</a>';
         }
     };
 
     window.prevEpubPage = function() {
-        if (epubRendition && typeof epubRendition.prev === 'function') {
-            epubRendition.prev();
+        if (currentReaderMode === 'comic') {
+            if (currentComicPageIndex > 0) {
+                currentComicPageIndex--;
+                showComicPage(currentComicPageIndex);
+            }
+        } else {
+            if (epubRendition && typeof epubRendition.prev === 'function') {
+                epubRendition.prev();
+            }
         }
     };
 
     window.nextEpubPage = function() {
-        if (epubRendition && typeof epubRendition.next === 'function') {
-            epubRendition.next();
+        if (currentReaderMode === 'comic') {
+            if (currentComicPageIndex < comicPageUrls.length - 1) {
+                currentComicPageIndex++;
+                showComicPage(currentComicPageIndex);
+            }
+        } else {
+            if (epubRendition && typeof epubRendition.next === 'function') {
+                epubRendition.next();
+            }
         }
     };
 
@@ -1609,16 +1820,27 @@
         if (epubRendition) {
             try { epubRendition.destroy(); } catch(e){}
         }
+        if (comicPageUrls && comicPageUrls.length > 0) {
+            comicPageUrls.forEach(function(url) {
+                try { URL.revokeObjectURL(url); } catch(e){}
+            });
+            comicPageUrls = [];
+        }
+        var img = document.getElementById('comic-current-img');
+        if (img) img.src = '';
+        currentReaderMode = 'epub';
     };
 
     document.addEventListener('keydown', function(e) {
         var modal = document.getElementById('readerModal');
-        if (modal.classList.contains('active') && epubRendition) {
+        if (modal.classList.contains('active')) {
             if (e.key === 'ArrowRight') nextEpubPage();
             if (e.key === 'ArrowLeft') prevEpubPage();
-            if (e.key === '+' || e.key === '=') changeFontSize(15);
-            if (e.key === '-' || e.key === '_') changeFontSize(-15);
-            if (e.key === 't' || e.key === 'T') toggleReaderTheme();
+            if (currentReaderMode === 'epub') {
+                if (e.key === '+' || e.key === '=') changeFontSize(15);
+                if (e.key === '-' || e.key === '_') changeFontSize(-15);
+                if (e.key === 't' || e.key === 'T') toggleReaderTheme();
+            }
             if (e.key === 'Escape') closeReader();
         }
     });
@@ -1642,7 +1864,11 @@
             : '<div style="width:110px; height:160px; margin:0 auto 12px; border-radius:6px; overflow:hidden; display:inline-block;">' + createPlaceholderCoverHTML(randomBook.title, randomBook.author) + '</div>';
 
         var badgesHtml = (randomBook.formats || ['EPUB']).map(function(fmt) {
-            var cls = fmt.toLowerCase().includes('pdf') ? 'badge-pdf' : fmt.toLowerCase().includes('mobi') ? 'badge-mobi' : fmt.toLowerCase().includes('cbr') ? 'badge-cbr' : 'badge-epub';
+            var cls = 'badge-epub';
+            if (fmt.toLowerCase().includes('pdf')) cls = 'badge-pdf';
+            else if (fmt.toLowerCase().includes('mobi')) cls = 'badge-mobi';
+            else if (fmt.toLowerCase().includes('cbr')) cls = 'badge-cbr';
+            else if (fmt.toLowerCase().includes('cbz')) cls = 'badge-cbz';
             return '<span class="format-badge ' + cls + '">' + fmt + '</span>';
         }).join('');
 
@@ -1654,7 +1880,7 @@
             '<div style="color:var(--accent-gold); font-size:14px; margin-bottom:8px;">' + randomBook.author + '</div>' +
             '<div style="margin-bottom:15px; display:flex; gap:6px; justify-content:center; align-items:center;">' + badgesHtml + pagesInfo + '</div>' +
             '<div style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">' +
-                '<button type="button" class="read-btn" onclick="closeRandomModal(); openReader(\'' + randomBook.folderId + '\');">📖 Leer libro</button>' +
+                '<button type="button" class="read-btn" onclick="closeRandomModal(); openReader(\'' + randomBook.folderId + '\');">📖 Leer ahora</button>' +
                 '<a href="' + (randomBook.bookLink || randomBook.webViewLink) + '" class="drive-icon-btn" target="_blank" style="padding:8px 14px; border-radius:6px;">📂 Abrir en Drive</a>' +
             '</div>';
     };
@@ -1714,11 +1940,11 @@
         var fmtMap = {
             'ALL': 'btn-fmt-all',
             'EPUB': 'btn-fmt-epub',
+            'CBR/CBZ': 'btn-fmt-cbr',
             'PDF': 'btn-fmt-pdf',
-            'MOBI': 'btn-fmt-mobi',
-            'CBR/CBZ': 'btn-fmt-cbr'
+            'MOBI': 'btn-fmt-mobi'
         };
-        ['btn-fmt-all', 'btn-fmt-epub', 'btn-fmt-pdf', 'btn-fmt-mobi', 'btn-fmt-cbr'].forEach(function(id) {
+        ['btn-fmt-all', 'btn-fmt-epub', 'btn-fmt-cbr', 'btn-fmt-pdf', 'btn-fmt-mobi'].forEach(function(id) {
             var el = document.getElementById(id);
             if (el) el.classList.remove('active');
         });
