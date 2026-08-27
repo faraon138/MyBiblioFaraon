@@ -173,6 +173,43 @@
             -webkit-appearance: none;
         }
 
+        /* BARRA ALFABÉTICA (A-Z) */
+        .alphabet-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            justify-content: center;
+            align-items: center;
+            max-width: 950px;
+            background: rgba(15, 23, 42, 0.6);
+            padding: 8px 12px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+        .alphabet-btn {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: #cbd5e1;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 5px 8px;
+            min-width: 24px;
+            text-align: center;
+            border-radius: 6px;
+            cursor: pointer;
+            -webkit-appearance: none;
+            touch-action: manipulation;
+            transition: all 0.15s ease;
+        }
+        .alphabet-btn:active { background-color: var(--accent-blue); color: #ffffff; }
+        .alphabet-btn.active {
+            background-color: var(--accent-gold) !important;
+            border-color: var(--accent-gold) !important;
+            color: #000000 !important;
+            font-weight: 900;
+            transform: scale(1.08);
+        }
+
         .filter-container { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; align-items: center; max-width: 1000px; }
         .filter-btn {
             background-color: var(--card-bg);
@@ -211,6 +248,7 @@
             .read-btn:hover { background-color: var(--accent-hover); }
             .action-btn:hover { background-color: var(--accent-blue); }
             .filter-btn:hover { border-color: #475569; background-color: #334155; }
+            .alphabet-btn:hover { border-color: var(--accent-blue); color: #ffffff; }
         }
 
         .cover-container {
@@ -693,6 +731,39 @@
                 <option value="ALL">🏷️ Todas las Etiquetas</option>
             </select>
         </div>
+
+        <!-- BARRA ALFABÉTICA POR AUTOR -->
+        <div class="alphabet-container" id="alphabet-bar">
+            <button type="button" class="alphabet-btn active" data-letter="ALL" onclick="setLetterFilter('ALL')">TODOS</button>
+            <button type="button" class="alphabet-btn" data-letter="A" onclick="setLetterFilter('A')">A</button>
+            <button type="button" class="alphabet-btn" data-letter="B" onclick="setLetterFilter('B')">B</button>
+            <button type="button" class="alphabet-btn" data-letter="C" onclick="setLetterFilter('C')">C</button>
+            <button type="button" class="alphabet-btn" data-letter="D" onclick="setLetterFilter('D')">D</button>
+            <button type="button" class="alphabet-btn" data-letter="E" onclick="setLetterFilter('E')">E</button>
+            <button type="button" class="alphabet-btn" data-letter="F" onclick="setLetterFilter('F')">F</button>
+            <button type="button" class="alphabet-btn" data-letter="G" onclick="setLetterFilter('G')">G</button>
+            <button type="button" class="alphabet-btn" data-letter="H" onclick="setLetterFilter('H')">H</button>
+            <button type="button" class="alphabet-btn" data-letter="I" onclick="setLetterFilter('I')">I</button>
+            <button type="button" class="alphabet-btn" data-letter="J" onclick="setLetterFilter('J')">J</button>
+            <button type="button" class="alphabet-btn" data-letter="K" onclick="setLetterFilter('K')">K</button>
+            <button type="button" class="alphabet-btn" data-letter="L" onclick="setLetterFilter('L')">L</button>
+            <button type="button" class="alphabet-btn" data-letter="M" onclick="setLetterFilter('M')">M</button>
+            <button type="button" class="alphabet-btn" data-letter="N" onclick="setLetterFilter('N')">N</button>
+            <button type="button" class="alphabet-btn" data-letter="Ñ" onclick="setLetterFilter('Ñ')">Ñ</button>
+            <button type="button" class="alphabet-btn" data-letter="O" onclick="setLetterFilter('O')">O</button>
+            <button type="button" class="alphabet-btn" data-letter="P" onclick="setLetterFilter('P')">P</button>
+            <button type="button" class="alphabet-btn" data-letter="Q" onclick="setLetterFilter('Q')">Q</button>
+            <button type="button" class="alphabet-btn" data-letter="R" onclick="setLetterFilter('R')">R</button>
+            <button type="button" class="alphabet-btn" data-letter="S" onclick="setLetterFilter('S')">S</button>
+            <button type="button" class="alphabet-btn" data-letter="T" onclick="setLetterFilter('T')">T</button>
+            <button type="button" class="alphabet-btn" data-letter="U" onclick="setLetterFilter('U')">U</button>
+            <button type="button" class="alphabet-btn" data-letter="V" onclick="setLetterFilter('V')">V</button>
+            <button type="button" class="alphabet-btn" data-letter="W" onclick="setLetterFilter('W')">W</button>
+            <button type="button" class="alphabet-btn" data-letter="X" onclick="setLetterFilter('X')">X</button>
+            <button type="button" class="alphabet-btn" data-letter="Y" onclick="setLetterFilter('Y')">Y</button>
+            <button type="button" class="alphabet-btn" data-letter="Z" onclick="setLetterFilter('Z')">Z</button>
+            <button type="button" class="alphabet-btn" data-letter="#" onclick="setLetterFilter('#')">#</button>
+        </div>
         
         <div class="filter-container">
             <button class="filter-btn active" id="btn-fmt-all" onclick="setFormatFilter('ALL')">Todos</button>
@@ -712,7 +783,7 @@
     <div id="pagination" class="pagination-container"></div>
 </div>
 
-<!-- MODAL VISOR UNIFICADO: EPUB + CBR/CBZ CÓMICS -->
+<!-- MODAL VISOR UNIFICADO -->
 <div id="readerModal">
     <div class="reader-modal-content">
         <div class="reader-header">
@@ -794,8 +865,8 @@
         'familiar': 'lectura2026'   
     };
 
-    var AUTH_SESSION_KEY = 'faraon138_logged_in_v20';
-    var AUTH_CURRENT_USER = 'faraon138_current_user_v20';
+    var AUTH_SESSION_KEY = 'faraon138_logged_in_v21';
+    var AUTH_CURRENT_USER = 'faraon138_current_user_v21';
     var FONT_SIZE_KEY = 'faraon138_reader_font_size';
     var THEME_KEY = 'faraon138_reader_theme';
 
@@ -803,7 +874,7 @@
     var currentReaderTheme = safeGet(THEME_KEY) || 'light';
 
     // ESTADO DEL VISOR
-    var currentReaderMode = 'epub'; // 'epub' o 'comic'
+    var currentReaderMode = 'epub'; 
     var comicPageUrls = [];
     var currentComicPageIndex = 0;
 
@@ -853,8 +924,8 @@
     // GOOGLE DRIVE CONFIG
     var API_KEY = 'AIzaSyABYJpop2BBwvK0cPpdXv-Mge3Wc_SanwQ'; 
     var FOLDER_ID = '1DXoxedW-epDoOGaHFHyCEno2G7OdCGmh';
-    var CACHE_KEY = 'faraon138_library_cache_v20';
-    var USER_DATA_KEY = 'faraon138_user_preferences_v20';
+    var CACHE_KEY = 'faraon138_library_cache_v21';
+    var USER_DATA_KEY = 'faraon138_user_preferences_v21';
 
     var globalBooks = [];       
     var userData = { favorites: {}, status: {} }; 
@@ -864,6 +935,7 @@
     var currentStatusFilter = 'ALL';
     var currentSeriesFilter = 'ALL';
     var currentTagFilter = 'ALL';
+    var currentLetterFilter = 'ALL'; // FILTRO ALFABÉTICO
     var currentSort = 'recent';
     var currentViewMode = 'detail'; 
     var searchQuery = '';
@@ -905,7 +977,7 @@
         safeSet(USER_DATA_KEY, JSON.stringify(userData));
     }
 
-    // CONTROL DE TAMAÑO DE FUENTE (EPUB)
+    // CONTROL DE TAMAÑO DE FUENTE
     window.changeFontSize = function(delta) {
         currentFontSize = Math.max(70, Math.min(250, currentFontSize + delta));
         safeSet(FONT_SIZE_KEY, currentFontSize.toString());
@@ -918,7 +990,6 @@
         if (label) label.innerText = currentFontSize + "%";
     }
 
-    // APLICAR TEMA OSCURO / CLARO
     function applyReaderTheme() {
         var btn = document.getElementById('btn-reader-theme');
         var bodyContainer = document.getElementById('reader-body-container');
@@ -1178,6 +1249,7 @@
         });
 
         var filtered = sorted.filter(function(book) {
+            // 1. FILTRO DE FORMATO
             if (currentFormatFilter !== 'ALL' && book.loadedDetails) {
                 if (currentFormatFilter === 'CBR/CBZ') {
                     if (!book.formats.includes('CBR') && !book.formats.includes('CBZ') && !book.formats.includes('CBR/CBZ')) return false;
@@ -1185,16 +1257,37 @@
                     if (!book.formats.includes(currentFormatFilter)) return false;
                 }
             }
+            // 2. FILTRO DE ESTADO Y FAVORITOS
             if (currentStatusFilter === 'FAV' && !userData.favorites[book.folderId]) return false;
             if (['leyendo', 'leido', 'pendiente'].includes(currentStatusFilter)) {
                 if (userData.status[book.folderId] !== currentStatusFilter) return false;
             }
+            // 3. FILTRO DE SERIE
             if (currentSeriesFilter !== 'ALL') {
                 if (!book.series || book.series !== currentSeriesFilter) return false;
             }
+            // 4. FILTRO DE ETIQUETA
             if (currentTagFilter !== 'ALL') {
                 if (!book.tags || book.tags.indexOf(currentTagFilter) === -1) return false;
             }
+            // 5. FILTRO ALFABÉTICO POR AUTOR (A-Z)
+            if (currentLetterFilter !== 'ALL') {
+                var authTrim = (book.author || '').trim();
+                if (authTrim.length === 0) return false;
+                var firstChar = authTrim.charAt(0);
+
+                if (currentLetterFilter === '#') {
+                    var firstNorm = normalizeText(firstChar);
+                    if (/^[a-z]/i.test(firstNorm)) return false;
+                } else if (currentLetterFilter === 'Ñ') {
+                    if (firstChar.toUpperCase() !== 'Ñ') return false;
+                } else {
+                    var firstNorm = normalizeText(firstChar);
+                    var targetNorm = normalizeText(currentLetterFilter);
+                    if (firstChar.toUpperCase() === 'Ñ' || firstNorm !== targetNorm) return false;
+                }
+            }
+            // 6. BUSCADOR DE TEXTO
             if (keywords.length > 0) {
                 var tagText = (book.tags && Array.isArray(book.tags)) ? book.tags.join(' ') : '';
                 var combinedText = normalizeText(book.title + ' ' + book.author + ' ' + (book.series || '') + ' ' + tagText + ' ' + book.folderName);
@@ -1563,7 +1656,7 @@
     async function loadComicImages(arrayBuffer) {
         var validExts = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp'];
 
-        // 1. Intenta con JSZip (Funciona con todos los .cbz y la mayoría de los .cbr)
+        // 1. Intenta con JSZip
         try {
             var zip = await JSZip.loadAsync(arrayBuffer);
             var imageEntries = [];
@@ -1590,7 +1683,7 @@
             }
         } catch (e) {}
 
-        // 2. Intenta con descompresor RAR si es un .cbr nativo
+        // 2. Intenta con unrar.js
         if (typeof unrar !== 'undefined' && unrar.createExtractorFromData) {
             try {
                 var extractor = unrar.createExtractorFromData(arrayBuffer);
@@ -1635,7 +1728,6 @@
         throw new Error("No se pudieron extraer las páginas del cómic.");
     }
 
-    // MOSTRAR PÁGINA DE CÓMIC
     function showComicPage(index) {
         if (!comicPageUrls || comicPageUrls.length === 0) return;
         var img = document.getElementById('comic-current-img');
@@ -1674,7 +1766,6 @@
             await fetchBookDeepDetails(book);
         }
 
-        // SI ES PDF
         if (book.formats && book.formats.some(function(f) { return f.toUpperCase().includes('PDF'); })) {
             loadingEl.innerHTML = 'Este libro está en formato <strong>PDF</strong>.<br><br>' +
                 '<a href="' + (book.bookLink || book.webViewLink) + '" target="_blank" class="read-btn" style="padding:12px 22px; font-size:15px; text-decoration:none; margin:0 auto; display:inline-flex;">📄 Abrir PDF en Google Drive</a>';
@@ -1698,9 +1789,7 @@
         try {
             var arrayBuffer = await getEpubBinaryBuffer(book.fileToReadId);
 
-            // ==========================================
-            // MODO 1: LECTOR DE CÓMICS (CBR / CBZ)
-            // ==========================================
+            // MODO 1: LECTOR CÓMIC (CBR/CBZ)
             if (isComic) {
                 currentReaderMode = 'comic';
                 if (fontBox) fontBox.style.display = 'none';
@@ -1713,7 +1802,6 @@
                 comicViewer.style.display = 'flex';
                 showComicPage(0);
 
-                // Configurar swipe y toques para el iPad en Cómics
                 var startX = 0;
                 comicViewer.ontouchstart = function(e) {
                     if (e.changedTouches && e.changedTouches[0]) {
@@ -1737,9 +1825,7 @@
                 return;
             }
 
-            // ==========================================
-            // MODO 2: LECTOR DE EPUB (LIBROS)
-            // ==========================================
+            // MODO 2: LECTOR EPUB
             currentReaderMode = 'epub';
             if (fontBox) fontBox.style.display = 'inline-flex';
             if (themeBtn) themeBtn.style.display = 'inline-flex';
@@ -1903,6 +1989,20 @@
     window.filterByAuthor = function(authorName) {
         document.getElementById('searchBar').value = authorName;
         searchQuery = authorName;
+        currentPage = 1;
+        filterAndRender(false);
+    };
+
+    window.setLetterFilter = function(letter) {
+        currentLetterFilter = (currentLetterFilter === letter && letter !== 'ALL') ? 'ALL' : letter;
+        
+        var btns = document.querySelectorAll('.alphabet-btn');
+        for (var i = 0; i < btns.length; i++) {
+            btns[i].classList.remove('active');
+            if (btns[i].getAttribute('data-letter') === currentLetterFilter) {
+                btns[i].classList.add('active');
+            }
+        }
         currentPage = 1;
         filterAndRender(false);
     };
