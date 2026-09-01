@@ -456,7 +456,7 @@
             border: 1px solid var(--border-color);
         }
 
-        /* MODAL LECTOR */
+        /* MODAL LECTOR UNIFICADO */
         #readerModal {
             position: fixed;
             top: 0;
@@ -562,7 +562,7 @@
             transition: background 0.3s ease;
         }
         
-        /* VISOR EPUB */
+        /* 1. VISOR EPUB */
         #epub-viewer { 
             position: absolute;
             top: 0;
@@ -579,7 +579,7 @@
             border: none;
         }
 
-        /* VISOR CBR / CBZ CÓMICS */
+        /* 2. VISOR CBR / CBZ CÓMICS */
         #comic-viewer {
             position: absolute;
             top: 0;
@@ -604,6 +604,24 @@
             display: block;
             box-shadow: 0 0 25px rgba(0,0,0,0.8);
             pointer-events: none;
+        }
+
+        /* 3. VISOR PDF INTEGRADO */
+        #pdf-viewer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+            background: #1e293b;
+            display: none;
+        }
+        #pdf-viewer iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
         }
 
         .reader-footer {
@@ -783,7 +801,7 @@
     <div id="pagination" class="pagination-container"></div>
 </div>
 
-<!-- MODAL VISOR UNIFICADO -->
+<!-- MODAL VISOR UNIFICADO (EPUB, CÓMIC Y PDF) -->
 <div id="readerModal">
     <div class="reader-modal-content">
         <div class="reader-header">
@@ -804,9 +822,10 @@
             <div id="comic-viewer">
                 <img id="comic-current-img" src="" alt="Página de Cómic">
             </div>
+            <div id="pdf-viewer"></div>
             <div id="reader-loading" style="color:#ffffff; font-size:15px; font-weight:bold; text-align:center; padding:30px; position:absolute; top:35%; width:100%; box-sizing:border-box;">Abriendo contenido digital...</div>
         </div>
-        <div class="reader-footer">
+        <div class="reader-footer" id="reader-footer-bar">
             <button class="action-btn" id="epub-prev" onclick="prevEpubPage()">← Anterior</button>
             <span id="reader-page-info" style="font-size:12px; color:#94a3b8; font-weight:600;">Desliza con el dedo o pulsa las flechas</span>
             <button class="action-btn" id="epub-next" onclick="nextEpubPage()">Siguiente →</button>
@@ -865,10 +884,10 @@
         'familiar': 'lectura2026'   
     };
 
-    var AUTH_SESSION_KEY = 'faraon138_logged_in_v22';
-    var AUTH_CURRENT_USER = 'faraon138_current_user_v22';
-    var FONT_SIZE_KEY = 'faraon138_reader_font_size';
-    var THEME_KEY = 'faraon138_reader_theme';
+    var AUTH_SESSION_KEY = 'faraon138_logged_in_v25';
+    var AUTH_CURRENT_USER = 'faraon138_current_user_v25';
+    var FONT_SIZE_KEY = 'faraon138_reader_font_size_v25';
+    var THEME_KEY = 'faraon138_reader_theme_v25';
 
     var currentFontSize = parseInt(safeGet(FONT_SIZE_KEY) || '115');
     var currentReaderTheme = safeGet(THEME_KEY) || 'light';
@@ -924,8 +943,8 @@
     // GOOGLE DRIVE CONFIG
     var API_KEY = 'AIzaSyABYJpop2BBwvK0cPpdXv-Mge3Wc_SanwQ'; 
     var FOLDER_ID = '1DXoxedW-epDoOGaHFHyCEno2G7OdCGmh';
-    var CACHE_KEY = 'faraon138_library_cache_v22';
-    var USER_DATA_KEY = 'faraon138_user_preferences_v22';
+    var CACHE_KEY = 'faraon138_library_cache_v25';
+    var USER_DATA_KEY = 'faraon138_user_preferences_v25';
 
     var globalBooks = [];       
     var userData = { favorites: {}, status: {} }; 
@@ -1741,7 +1760,7 @@
         if (comicContainer) comicContainer.scrollTop = 0;
     }
 
-    // GESTIÓN DE LECTURA (PRIORIDAD: EPUB > CBR/CBZ > PDF)
+    // GESTIÓN DE LECTURA ROBUSTA: PRIORIDAD ABSOLUTA AL EPUB
     window.openReader = async function(folderId) {
         var book = globalBooks.find(function(b) { return b.folderId === folderId; });
         if (!book) return;
@@ -1751,9 +1770,11 @@
         var loadingEl = document.getElementById('reader-loading');
         var epubViewer = document.getElementById('epub-viewer');
         var comicViewer = document.getElementById('comic-viewer');
+        var pdfViewer = document.getElementById('pdf-viewer');
         var appleBtn = document.getElementById('btn-apple-books');
         var fontBox = document.getElementById('reader-font-box');
         var themeBtn = document.getElementById('btn-reader-theme');
+        var footerNav = document.getElementById('reader-footer-bar');
         var pageInfo = document.getElementById('reader-page-info');
 
         titleEl.innerText = book.title;
@@ -1762,45 +1783,83 @@
         loadingEl.innerHTML = "Abriendo contenido digital...";
         epubViewer.style.display = 'none';
         comicViewer.style.display = 'none';
+        pdfViewer.style.display = 'none';
 
-        if (!book.loadedDetails) {
+        if (!book.loadedDetails || (!book.epubId && !book.comicId && !book.pdfId)) {
             await fetchBookDeepDetails(book);
         }
 
-        // EVALUACIÓN DE FORMATOS CON PRIORIDAD
-        var hasEpub = !!book.epubId || (book.formats && book.formats.some(function(f) { return f.toUpperCase() === 'EPUB'; }));
-        var isComic = !hasEpub && (!!book.comicId || (book.formats && book.formats.some(function(f) { 
-            var u = f.toUpperCase(); 
-            return u.includes('CBR') || u.includes('CBZ'); 
-        })));
-        var isOnlyPdf = !hasEpub && !isComic && (book.formats && book.formats.some(function(f) { return f.toUpperCase().includes('PDF'); }));
+        // ==========================================
+        // 1. PRIORIDAD MÁXIMA: FORMATO EPUB
+        // ==========================================
+        if (book.epubId) {
+            currentReaderMode = 'epub';
+            if (fontBox) fontBox.style.display = 'inline-flex';
+            if (themeBtn) themeBtn.style.display = 'inline-flex';
+            if (footerNav) footerNav.style.display = 'flex';
+            if (pageInfo) pageInfo.innerText = 'Desliza con el dedo o pulsa las flechas';
+            if (appleBtn) {
+                appleBtn.setAttribute('href', 'https://drive.google.com/uc?export=download&id=' + book.epubId);
+                appleBtn.innerHTML = '📲 Abrir en Apple Books';
+            }
 
-        // SI EL LIBRO ES EXCLUSIVAMENTE PDF (SIN EPUB NI CÓMIC)
-        if (isOnlyPdf) {
-            loadingEl.innerHTML = 'Este libro está disponible únicamente en formato <strong>PDF</strong>.<br><br>' +
-                '<a href="' + (book.bookLink || book.webViewLink) + '" target="_blank" class="read-btn" style="padding:12px 22px; font-size:15px; text-decoration:none; margin:0 auto; display:inline-flex;">📄 Abrir PDF en Google Drive</a>';
-            return;
+            try {
+                var arrayBuffer = await getEpubBinaryBuffer(book.epubId);
+                loadingEl.style.display = 'none';
+                epubViewer.style.display = 'block';
+
+                if (epubRendition) {
+                    try { epubRendition.destroy(); } catch(e){}
+                }
+                epubViewer.innerHTML = '';
+
+                var ePubBook = ePub(arrayBuffer);
+                epubRendition = ePubBook.renderTo("epub-viewer", { 
+                    width: "100%", 
+                    height: "100%",
+                    spread: "none",
+                    flow: "paginated"
+                });
+
+                epubRendition.on("rendered", function(section, iframeView) {
+                    applyReaderTheme();
+                    if (iframeView && iframeView.document) {
+                        var doc = iframeView.document;
+                        var startX = 0;
+                        doc.addEventListener("touchstart", function(e) {
+                            startX = e.changedTouches[0].screenX;
+                        }, { passive: true });
+                        doc.addEventListener("touchend", function(e) {
+                            var diffX = e.changedTouches[0].screenX - startX;
+                            if (diffX < -50) nextEpubPage();
+                            if (diffX > 50) prevEpubPage();
+                        }, { passive: true });
+                    }
+                });
+
+                await epubRendition.display();
+                applyReaderTheme();
+                return;
+            } catch(e) {
+                console.error("Error abriendo EPUB:", e);
+            }
         }
 
-        // ARCHIVO DE LECTURA PRIORITARIO: EPUB > CÓMIC > OTRO
-        var targetFileId = book.epubId || (isComic ? book.comicId : null) || book.fileToReadId || book.folderId;
-        var directDownloadUrl = 'https://drive.google.com/uc?export=download&id=' + targetFileId;
-        if (appleBtn) appleBtn.setAttribute('href', directDownloadUrl);
+        // ==========================================
+        // 2. SEGUNDA PRIORIDAD: CÓMIC (CBR / CBZ)
+        // ==========================================
+        if (book.comicId) {
+            currentReaderMode = 'comic';
+            if (fontBox) fontBox.style.display = 'none';
+            if (themeBtn) themeBtn.style.display = 'none';
+            if (footerNav) footerNav.style.display = 'flex';
+            if (appleBtn) {
+                appleBtn.setAttribute('href', 'https://drive.google.com/uc?export=download&id=' + book.comicId);
+                appleBtn.innerHTML = '📲 Descargar Cómic';
+            }
 
-        if (!targetFileId) {
-            loadingEl.innerHTML = 'Este libro no posee un archivo legible directo.<br><br><a href="' + (book.bookLink || book.webViewLink) + '" target="_blank" class="read-btn">📂 Abrir en Google Drive</a>';
-            return;
-        }
-
-        try {
-            var arrayBuffer = await getEpubBinaryBuffer(targetFileId);
-
-            // MODO 1: LECTOR CÓMIC (CBR / CBZ)
-            if (isComic) {
-                currentReaderMode = 'comic';
-                if (fontBox) fontBox.style.display = 'none';
-                if (themeBtn) themeBtn.style.display = 'none';
-
+            try {
+                var arrayBuffer = await getEpubBinaryBuffer(book.comicId);
                 comicPageUrls = await loadComicImages(arrayBuffer);
                 currentComicPageIndex = 0;
 
@@ -1827,58 +1886,34 @@
                     if (clickX < rect.width * 0.35) window.prevEpubPage();
                     else if (clickX > rect.width * 0.65) window.nextEpubPage();
                 };
-
                 return;
+            } catch(e) {
+                console.error("Error abriendo Cómic:", e);
             }
+        }
 
-            // MODO 2: LECTOR EPUB (PRIORITARIO POR DEFECTO)
-            currentReaderMode = 'epub';
-            if (fontBox) fontBox.style.display = 'inline-flex';
-            if (themeBtn) themeBtn.style.display = 'inline-flex';
-            if (pageInfo) pageInfo.innerText = 'Desliza con el dedo o pulsa las flechas';
+        // ==========================================
+        // 3. TERCERA PRIORIDAD: VISOR PDF INTEGRADO
+        // ==========================================
+        if (book.pdfId) {
+            currentReaderMode = 'pdf';
+            if (fontBox) fontBox.style.display = 'none';
+            if (themeBtn) themeBtn.style.display = 'none';
+            if (footerNav) footerNav.style.display = 'none'; // El visor nativo de PDF tiene sus propios controles
+            if (appleBtn) {
+                appleBtn.setAttribute('href', book.pdfLink || ('https://drive.google.com/file/d/' + book.pdfId + '/view'));
+                appleBtn.innerHTML = '📄 Abrir en pestaña';
+            }
 
             loadingEl.style.display = 'none';
-            epubViewer.style.display = 'block';
-
-            if (epubRendition) {
-                try { epubRendition.destroy(); } catch(e){}
-            }
-            epubViewer.innerHTML = '';
-
-            var ePubBook = ePub(arrayBuffer);
-            epubRendition = ePubBook.renderTo("epub-viewer", { 
-                width: "100%", 
-                height: "100%",
-                spread: "none",
-                flow: "paginated"
-            });
-
-            epubRendition.on("rendered", function(section, iframeView) {
-                applyReaderTheme();
-                if (iframeView && iframeView.document) {
-                    var doc = iframeView.document;
-                    var startX = 0;
-                    doc.addEventListener("touchstart", function(e) {
-                        startX = e.changedTouches[0].screenX;
-                    }, { passive: true });
-                    doc.addEventListener("touchend", function(e) {
-                        var diffX = e.changedTouches[0].screenX - startX;
-                        if (diffX < -50) nextEpubPage();
-                        if (diffX > 50) prevEpubPage();
-                    }, { passive: true });
-                }
-            });
-
-            await epubRendition.display();
-            applyReaderTheme();
-
-        } catch (e) {
-            console.error("Error abriendo documento:", e);
-            loadingEl.style.display = 'block';
-            loadingEl.innerHTML = 'No se pudo desplegar el visor interno de este archivo.<br><br>' +
-                '<a href="' + directDownloadUrl + '" target="_blank" class="read-btn" style="background:#0284c7; padding:12px 22px; font-size:15px; text-decoration:none; display:inline-flex;">📲 Descargar y Abrir en App Externa</a><br><br>' +
-                '<a href="' + (book.bookLink || book.webViewLink) + '" target="_blank" style="color:#94a3b8; font-size:13px;">📂 Abrir en Google Drive</a>';
+            pdfViewer.style.display = 'block';
+            pdfViewer.innerHTML = '<iframe src="https://drive.google.com/file/d/' + book.pdfId + '/preview" style="width:100%; height:100%; border:none; background:#1e293b;" allow="autoplay"></iframe>';
+            return;
         }
+
+        // Si no hay ningún archivo directo disponible
+        loadingEl.style.display = 'block';
+        loadingEl.innerHTML = 'No se encontró un archivo legible en este libro.<br><br><a href="' + (book.bookLink || book.webViewLink) + '" target="_blank" class="read-btn">📂 Abrir en Google Drive</a>';
     };
 
     window.prevEpubPage = function() {
@@ -1887,7 +1922,7 @@
                 currentComicPageIndex--;
                 showComicPage(currentComicPageIndex);
             }
-        } else {
+        } else if (currentReaderMode === 'epub') {
             if (epubRendition && typeof epubRendition.prev === 'function') {
                 epubRendition.prev();
             }
@@ -1900,7 +1935,7 @@
                 currentComicPageIndex++;
                 showComicPage(currentComicPageIndex);
             }
-        } else {
+        } else if (currentReaderMode === 'epub') {
             if (epubRendition && typeof epubRendition.next === 'function') {
                 epubRendition.next();
             }
@@ -1920,6 +1955,8 @@
         }
         var img = document.getElementById('comic-current-img');
         if (img) img.src = '';
+        var pdfV = document.getElementById('pdf-viewer');
+        if (pdfV) pdfV.innerHTML = '';
         currentReaderMode = 'epub';
     };
 
